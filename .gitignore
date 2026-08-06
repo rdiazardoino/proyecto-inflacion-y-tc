@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+
+# Respaldos rotativos de la base: no versionar
+db/backups/
+*.db-wal
+*.db-shm
+
+# Salidas generadas: se regeneran, no se versionan
+outputs/dashboards/*
+outputs/excel/*
+outputs/informes/*
+!outputs/**/.gitkeep
+
+# Crudos pesados. La base .db SI se versiona (es el registro point-in-time).
+data/raw/**/*.xls
+data/raw/**/*.xlsx
+data/raw/**/*.pdf

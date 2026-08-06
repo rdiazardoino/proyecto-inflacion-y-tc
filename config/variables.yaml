@@ -1,0 +1,424 @@
+# =====================================================================
+# INVENTARIO DE VARIABLES
+# prioridad: indispensable | importante | complementaria
+# La v1 del sistema usa SOLO las 'indispensable'. Las demas se incorporan
+# por fases una vez que el pipeline base funciona end-to-end.
+# =====================================================================
+
+meta:
+  proyecto: "Inflacion y Tipo de Cambio Uruguay"
+  base_ipc: "Octubre 2022 = 100"
+  bases_historicas:
+    - "Marzo 1997 = 100"
+    - "Diciembre 2010 = 100 (cerrada en 10/2022)"
+    - "Octubre 2022 = 100 (vigente)"
+  moneda: "UYU"
+  zona_horaria: "America/Montevideo"
+
+# ---------------------------------------------------------------------
+# BLOQUE A - OBJETIVO: INFLACION
+# ---------------------------------------------------------------------
+inflacion:
+
+  - var_id: ipc_general_idx
+    nombre: "IPC general (indice)"
+    fuente: INE
+    fuente_url: "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-octubre-2022100"
+    fuente_url_base_2010: "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-diciembre-2010100"
+    fuente_url_base_1997: "https://www.gub.uy/instituto-nacional-estadistica/datos/series-historicas-ipc-base-marzo-1997100"
+    frecuencia: M
+    rezago_dias: 4          # INE publica ~dia 4-5 del mes siguiente
+    transformacion: [pct_m, pct_yoy, log]
+    hipotesis_econ: "Variable objetivo principal."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: ipc_transables_idx
+    nombre: "IPC transables"
+    fuente: INE
+    frecuencia: M
+    rezago_dias: 4
+    transformacion: [pct_m, pct_yoy]
+    hipotesis_econ: "Canal directo del pass-through cambiario y precios internacionales."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: ipc_no_transables_idx
+    nombre: "IPC no transables"
+    fuente: INE
+    frecuencia: M
+    rezago_dias: 4
+    transformacion: [pct_m, pct_yoy]
+    hipotesis_econ: "Refleja demanda interna, salarios e inercia. Componente mas persistente."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: ipc_subyacente_idx
+    nombre: "IPC subyacente / nucleo (INE)"
+    fuente: INE
+    frecuencia: M
+    rezago_dias: 4
+    transformacion: [pct_m, pct_yoy]
+    hipotesis_econ: "Mide tendencia excluyendo volatiles y administrados. Mejor predictor de inflacion futura que el headline."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: ipc_divisiones_idx
+    nombre: "IPC por division (12 divisiones COICOP)"
+    fuente: INE
+    frecuencia: M
+    rezago_dias: 4
+    transformacion: [pct_m, incidencia]
+    hipotesis_econ: "Base del modelo bottom-up y del calculo de incidencias."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: ipc_ponderaciones
+    nombre: "Ponderaciones oficiales del IPC"
+    fuente: INE
+    frecuencia: A
+    transformacion: [nivel]
+    hipotesis_econ: "Necesarias para agregar bottom-up y calcular incidencias."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: exp_inflacion_bcu_12m
+    nombre: "Expectativas de inflacion 12 meses (mediana, encuesta BCU)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Encuesta-Inflacion.aspx"
+    frecuencia: M
+    rezago_dias: 10
+    transformacion: [nivel]
+    hipotesis_econ: "Ancla de la curva de Phillips. Benchmark de consenso obligatorio."
+    modelo_destino: ambos
+    prioridad: indispensable
+
+  - var_id: exp_inflacion_bcu_24m
+    nombre: "Expectativas de inflacion 24 meses (mediana, encuesta BCU)"
+    fuente: BCU
+    frecuencia: M
+    rezago_dias: 10
+    transformacion: [nivel]
+    hipotesis_econ: "Mide anclaje respecto de la meta de 4,5%. Clave para horizonte largo."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: precio_nafta_super
+    nombre: "Precio nafta super (ANCAP)"
+    fuente: ANCAP
+    frecuencia: M
+    rezago_dias: 0          # se anuncia antes de vigencia -> informacion conocida
+    transformacion: [pct_m]
+    hipotesis_econ: "Ajuste tarifario conocido ex ante. Entrada directa al nowcast del mes en curso."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: tarifa_ute
+    nombre: "Tarifa electrica residencial (UTE)"
+    fuente: UTE
+    frecuencia: M
+    rezago_dias: 0
+    transformacion: [pct_m]
+    hipotesis_econ: "Precio administrado, ajuste conocido ex ante."
+    modelo_destino: inflacion
+    prioridad: importante
+
+  - var_id: salario_nominal_ims
+    nombre: "Indice medio de salarios nominal"
+    fuente: INE
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Driver de no transables y servicios. Indexacion salarial es fuente clave de inercia en Uruguay."
+    modelo_destino: inflacion
+    prioridad: importante
+
+  - var_id: imae
+    nombre: "Indicador mensual de actividad economica"
+    fuente: BCU
+    frecuencia: M
+    rezago_dias: 45
+    transformacion: [pct_yoy, brecha_hp]
+    hipotesis_econ: "Proxy mensual de brecha de producto para la curva de Phillips."
+    modelo_destino: ambos
+    prioridad: importante
+
+# ---------------------------------------------------------------------
+# BLOQUE B - OBJETIVO: TIPO DE CAMBIO
+# ---------------------------------------------------------------------
+tipo_cambio:
+
+  - var_id: tc_usduyu_interbancario
+    nombre: "USD/UYU interbancario billete (cierre diario)"
+    fuente: BCU
+    fuente_url: "https://cotizaciones.bcu.gub.uy/wscotizaciones/servlet/awsbcucotizaciones?wsdl"
+    metodo_acceso: "SOAP. Metodo cot:wsbcucotizaciones.Execute, namespace xmlns:cot='Cotiza'. Entrada: cot:Moneda/cot:item=2225 (USD), cot:FechaDesde, cot:FechaHasta (xsd:date), cot:Grupo=0. Codigos de moneda en https://www.bcu.gub.uy/Documents/cotizacion.txt (tercera columna)."
+    frecuencia: D
+    rezago_dias: 0
+    transformacion: [prom_mensual, cierre_mensual, dlog, pct_yoy]
+    hipotesis_econ: "Variable objetivo principal. Se agrega a promedio mensual y cierre de mes."
+    modelo_destino: tc
+    prioridad: indispensable
+
+  - var_id: exp_tc_bcu_dic
+    nombre: "Expectativa de TC a fin de ano (mediana, encuesta BCU)"
+    fuente: BCU
+    frecuencia: M
+    rezago_dias: 10
+    transformacion: [nivel]
+    hipotesis_econ: "Consenso de mercado. Benchmark obligatorio para el modelo de TC."
+    modelo_destino: tc
+    prioridad: indispensable
+
+  - var_id: tpm_bcu
+    nombre: "Tasa de politica monetaria"
+    fuente: BCU
+    frecuencia: M
+    rezago_dias: 0
+    transformacion: [nivel, diff]
+    hipotesis_econ: "Determina el carry en pesos y la tasa real ex ante. Canal principal de politica."
+    modelo_destino: ambos
+    prioridad: indispensable
+
+  - var_id: usdbrl
+    nombre: "USD/BRL"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual, dlog]
+    hipotesis_econ: "Uruguay co-mueve fuertemente con Brasil. Principal driver externo regional del TC."
+    modelo_destino: tc
+    prioridad: indispensable
+
+  - var_id: dxy
+    nombre: "Indice dolar (DXY / broad dollar index)"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual, dlog]
+    hipotesis_econ: "Componente global del movimiento del USD, separable del factor idiosincratico local."
+    modelo_destino: tc
+    prioridad: indispensable
+
+  - var_id: ust_10y
+    nombre: "Rendimiento Treasury 10 anos"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual, diff]
+    hipotesis_econ: "Condiciones financieras globales; base del diferencial de tasas."
+    modelo_destino: tc
+    prioridad: indispensable
+
+  - var_id: fed_funds
+    nombre: "Fed funds effective rate"
+    fuente: FRED
+    frecuencia: M
+    rezago_dias: 1
+    transformacion: [nivel]
+    hipotesis_econ: "Pata externa del diferencial de tasas UY-US (paridad descubierta)."
+    modelo_destino: tc
+    prioridad: indispensable
+
+  - var_id: embi_uruguay
+    nombre: "Riesgo pais Uruguay (EMBI / spread soberano)"
+    fuente: "Republica AFAP / JP Morgan"
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual]
+    hipotesis_econ: "Prima de riesgo soberano; afecta el TC de equilibrio y el carry ajustado."
+    modelo_destino: tc
+    prioridad: importante
+
+  - var_id: vix
+    nombre: "VIX"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual]
+    hipotesis_econ: "Aversion global al riesgo; regimen de risk-off deprecia monedas emergentes."
+    modelo_destino: tc
+    prioridad: importante
+
+  - var_id: tcr_efectivo
+    nombre: "Tipo de cambio real efectivo (BCU)"
+    fuente: BCU
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [nivel, desvio_media_lp]
+    hipotesis_econ: "Mide competitividad y desalineamiento respecto de fundamentos."
+    modelo_destino: tc
+    prioridad: importante
+
+  - var_id: tcr_bilateral_brasil
+    nombre: "TCR bilateral con Brasil"
+    fuente: BCU
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [nivel]
+    hipotesis_econ: "Competitividad regional; driver de turismo y comercio fronterizo."
+    modelo_destino: tc
+    prioridad: importante
+
+  - var_id: tcr_bilateral_argentina
+    nombre: "TCR bilateral con Argentina"
+    fuente: BCU
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [nivel]
+    hipotesis_econ: "Brecha de precios con Argentina afecta turismo, consumo fronterizo y precios de frontera."
+    modelo_destino: ambos
+    prioridad: importante
+
+# ---------------------------------------------------------------------
+# BLOQUE C - COMMODITIES Y EXTERNAS
+# ---------------------------------------------------------------------
+externas:
+
+  - var_id: brent
+    nombre: "Petroleo Brent"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual, dlog]
+    hipotesis_econ: "Insumo directo del precio de combustibles via metodologia PPI de ANCAP."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: soja
+    nombre: "Precio soja"
+    fuente: FRED
+    frecuencia: M
+    rezago_dias: 5
+    transformacion: [dlog]
+    hipotesis_econ: "Termino de intercambio; afecta ingreso de divisas y por tanto el TC."
+    modelo_destino: tc
+    prioridad: importante
+
+  - var_id: cpi_us
+    nombre: "CPI Estados Unidos"
+    fuente: FRED
+    frecuencia: M
+    rezago_dias: 12
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Inflacion internacional; pata externa del TCR y de precios de importacion."
+    modelo_destino: ambos
+    prioridad: importante
+
+  - var_id: ipca_brasil
+    nombre: "IPCA Brasil"
+    fuente: "BCB / IBGE"
+    frecuencia: M
+    rezago_dias: 10
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Inflacion regional; pata brasilena del TCR bilateral."
+    modelo_destino: ambos
+    prioridad: complementaria
+
+# ---------------------------------------------------------------------
+# BLOQUE D - MERCADO PRIMARIO: LICITACIONES
+# Sustituyen operativamente a las curvas de BEVSA. Son datos publicos,
+# publicados el mismo dia de la licitacion antes de las 17:00, con
+# rendimiento de corte por plazo y por moneda. Alimentan el informe
+# semanal y la construccion de curva y break-even.
+# ---------------------------------------------------------------------
+licitaciones:
+
+  - var_id: lic_lrm_tasa_corte
+    nombre: "Tasa de corte de Letras de Regulacion Monetaria (LRM) por plazo"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Operaciones-Monetarias.aspx"
+    frecuencia: W
+    rezago_dias: 0
+    transformacion: [nivel, curva]
+    hipotesis_econ: "Curva en pesos nominales del tramo corto. Base del carry y de la paridad cubierta para aproximar el forward USD/UYU."
+    modelo_destino: ambos
+    prioridad: indispensable
+
+  - var_id: lic_lrm_montos
+    nombre: "LRM: monto ofrecido, demandado y adjudicado; bid-to-cover"
+    fuente: BCU
+    frecuencia: W
+    rezago_dias: 0
+    transformacion: [nivel, ratio]
+    hipotesis_econ: "Mide apetito por pesos. Bid-to-cover bajo y tasa de corte al alza anticipan presion sobre el TC."
+    modelo_destino: tc
+    prioridad: importante
+
+  - var_id: lic_nt_uyu_tasa_corte
+    nombre: "Notas del Tesoro en pesos nominales: tasa de corte por plazo"
+    fuente: "UGD / MEF"
+    fuente_url: "https://deuda.mef.gub.uy/"
+    frecuencia: M
+    rezago_dias: 0
+    transformacion: [nivel, curva]
+    hipotesis_econ: "Extiende la curva nominal mas alla del tramo LRM."
+    modelo_destino: ambos
+    prioridad: indispensable
+
+  - var_id: lic_nt_ui_tasa_corte
+    nombre: "Notas del Tesoro en UI: tasa de corte real por plazo"
+    fuente: "UGD / MEF"
+    fuente_url: "https://deuda.mef.gub.uy/"
+    frecuencia: M
+    rezago_dias: 0
+    transformacion: [nivel, curva]
+    hipotesis_econ: "Pata real de la curva. Break-even = tasa nominal - tasa real al mismo plazo. Expectativa de inflacion implicita de mercado, complementaria e independiente de la encuesta BCU."
+    modelo_destino: inflacion
+    prioridad: indispensable
+
+  - var_id: lic_nt_up_tasa_corte
+    nombre: "Notas del Tesoro en Unidades Previsionales (UP): tasa de corte"
+    fuente: "UGD / MEF"
+    frecuencia: M
+    rezago_dias: 0
+    transformacion: [nivel, curva]
+    hipotesis_econ: "Indexada a salarios. Diferencial UP-UI aproxima expectativa de salario real."
+    modelo_destino: inflacion
+    prioridad: complementaria
+
+  - var_id: calendario_licitaciones
+    nombre: "Calendario de licitaciones de deuda"
+    fuente: "BCU / UGD"
+    fuente_url: "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Calendario%20Deuda/calendario_deuda.pdf"
+    frecuencia: S
+    transformacion: [evento]
+    hipotesis_econ: "Define que semanas del informe traen dato nuevo de curva. 2026 S2: 19 licitaciones, 6 instrumentos (2 UYU nominal, 2 UI, 2 UP)."
+    modelo_destino: ambos
+    prioridad: importante
+
+# ---------------------------------------------------------------------
+# BLOQUE E - DERIVADAS DE MERCADO
+# ---------------------------------------------------------------------
+mercados_derivados:
+
+  - var_id: breakeven_inflacion
+    nombre: "Break-even de inflacion implicito (nominal - UI)"
+    fuente: "Calculado"
+    frecuencia: M
+    transformacion: [nivel]
+    hipotesis_econ: "Expectativa de inflacion de mercado por plazo. Se contrasta contra la encuesta BCU y contra el pronostico propio."
+    modelo_destino: inflacion
+    prioridad: indispensable
+    notas: "Derivado de lic_nt_uyu_tasa_corte y lic_nt_ui_tasa_corte interpolados al mismo plazo."
+
+  - var_id: forward_usduyu_implicito
+    nombre: "Forward USD/UYU por paridad cubierta"
+    fuente: "Calculado"
+    frecuencia: W
+    transformacion: [nivel]
+    hipotesis_econ: "Benchmark obligatorio del modelo de TC. F = S * (1+i_UYU)/(1+i_USD) al plazo correspondiente."
+    modelo_destino: tc
+    prioridad: indispensable
+    notas: "i_UYU de lic_lrm_tasa_corte; i_USD de ust_10y / curva Treasury al mismo plazo. Aproximacion: ignora prima de riesgo de conversion, sesga el forward respecto del de BEVSA."
+
+  - var_id: curva_bevsa
+    nombre: "Curvas BEVSA (CUI, CUP, CUD, CUTIF, ITLUP, IRUBEVSA, INDUI, ITBGL)"
+    fuente: BEVSA
+    fuente_url: "https://web.bevsa.com.uy/"
+    frecuencia: D
+    transformacion: [nivel]
+    hipotesis_econ: "Curva de mercado secundario, mas fina que la primaria."
+    modelo_destino: ambos
+    prioridad: complementaria
+    notas: "SIN ACCESO AUTOMATICO: sitio ASPX renderizado por JS, sin API abierta. NO es bloqueante: la curva primaria de licitaciones cubre la necesidad. Queda como mejora futura via captura manual o navegador."

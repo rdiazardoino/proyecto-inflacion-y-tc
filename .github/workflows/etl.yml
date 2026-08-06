@@ -1,0 +1,91 @@
+name: ETL
+
+# El ETL corre acá y no en Cowork porque el entorno de ejecución de Cowork
+# no tiene salida a internet hacia ine.gub.uy, bcu.gub.uy ni fred.stlouisfed.org.
+# Este workflow descarga, valida y commitea los datos al repo. Cowork después
+# hace transformaciones, modelos y reportes sobre los datos ya locales.
+
+on:
+  schedule:
+    # Días hábiles 21:30 UTC ≈ 18:30 Montevideo, después del cierre y de que
+    # se publiquen los resultados de licitaciones (antes de las 17:00 local).
+    - cron: "30 21 * * 1-5"
+    # Día 5 de cada mes 13:00 UTC ≈ 10:00 Montevideo: el INE ya publicó el IPC.
+    - cron: "0 13 5 * *"
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "diario | semanal | mensual | historico"
+        required: true
+        default: "semanal"
+        type: choice
+        options: [diario, semanal, mensual, historico]
+
+concurrency:
+  group: etl
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Determinar modo
+        id: modo
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "modo=${{ inputs.modo }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.schedule }}" = "0 13 5 * *" ]; then
+            echo "modo=mensual" >> $GITHUB_OUTPUT
+          elif [ "$(date -u +%u)" = "5" ]; then
+            echo "modo=semanal" >> $GITHUB_OUTPUT
+          else
+            echo "modo=diario" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Tests offline
+        run: python tests/test_etl.py
+
+      - name: Correr ETL
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python src/etl/run_etl.py --modo ${{ steps.modo.outputs.modo }}
+
+      - name: Commitear datos
+        run: |
+          git config user.name  "etl-bot"
+          git config user.email "etl-bot@users.noreply.github.com"
+          git add -A db/proyecto.db data/ || true
+          if git diff --staged --quiet; then
+            echo "sin cambios"
+          else
+            git commit -m "etl ${{ steps.modo.outputs.modo }} $(date -u +%Y-%m-%d)"
+            git pull --rebase --autostash origin ${{ github.ref_name }} || true
+            git push
+          fi
+
+      - name: Publicar log como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: etl-log-${{ github.run_number }}
+          path: |
+            data/raw/**
+          retention-days: 14
+          if-no-files-found: ignore
