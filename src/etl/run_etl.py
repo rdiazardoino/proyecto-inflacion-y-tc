@@ -213,7 +213,10 @@ def controles(con) -> None:
     hoy = dt.date.today()
     limites = {
         "tc_usduyu_interbancario": 5,
-        "ipc_general_idx": 45,
+        # fecha_ref es el primer dia del mes: el dato de julio se publica
+        # ~5 de agosto y recien esta "vencido" cuando falta el de agosto
+        # (~5 de setiembre) => tolerancia ~70 dias desde la fecha_ref.
+        "ipc_general_idx": 70,
         "usdbrl": 7,
         "ust_10y": 7,
         "brent": 7,
