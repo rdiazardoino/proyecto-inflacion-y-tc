@@ -102,48 +102,93 @@ def etl_fred(con, desde: str) -> int:
     return total
 
 
+def _upsert_serie(con, var_id: str, s: pd.Series, fuente: str) -> int:
+    r = db.upsert_observaciones(
+        con, var_id, [(i.strftime("%Y-%m-%d"), v) for i, v in s.items()],
+        fuente=fuente)
+    print(f"[etl] {var_id}: {r}")
+    return r["nuevas"]
+
+
 @paso("ine_ipc")
 def etl_ipc(con) -> int:
-    archivos = ine_ipc.bajar_todo()
-    series_por_base: dict[str, pd.Series] = {}
-    for clave, rutas in archivos.items():
-        mejor = pd.Series(dtype=float)
-        for ruta in rutas:
-            s = ine_ipc.leer_indice(ruta)
-            if len(s) > len(mejor):
-                mejor = s
-        if len(mejor):
-            series_por_base[clave] = mejor
-            print(f"[etl] IPC {clave}: {len(mejor)} obs")
-        else:
+    """
+    Ingesta del IPC con parsers especificos por planilla (calibrados contra
+    los archivos reales, ver ine_ipc.py). Cada planilla falla aislada con
+    alerta; si ninguna parsea, la corrida del paso falla.
+    """
+    ine_ipc.bajar_todo()
+    base = ine_ipc.RAW / "base_2022_10"
+    total = 0
+    parseo_ok = False
+
+    def _intento(nombre, fragmentos, fn):
+        nonlocal parseo_ok
+        ruta = ine_ipc.buscar_archivo(base, *fragmentos)
+        if ruta is None:
             db.alerta(con, "estructura", "critica",
-                      f"No se pudo parsear ninguna planilla de {clave}. "
-                      f"El layout del INE probablemente cambio.",
+                      f"No se encontro la planilla de {nombre} en {base}. "
+                      f"El INE pudo haber renombrado el archivo.",
                       var_id="ipc_general_idx")
+            return None
+        try:
+            res = fn(ruta)
+            parseo_ok = True
+            return res
+        except Exception as e:                        # noqa: BLE001
+            db.alerta(con, "estructura", "critica",
+                      f"Fallo el parseo de {nombre} ({ruta.name}): {e}",
+                      var_id="ipc_general_idx")
+            return None
 
-    if not series_por_base:
-        raise RuntimeError("ninguna base del IPC pudo parsearse")
+    # 1. Serie oficial reexpresada base oct-2022 desde julio 1937.
+    #    Cumple el rol de la serie larga: no hace falta empalme propio.
+    largo = _intento("serie general larga", ("gral", "variaciones"),
+                     ine_ipc.parsear_general_largo)
+    if largo is not None and len(largo):
+        total += _upsert_serie(
+            con, "ipc_general_empalmado", largo,
+            "INE, serie oficial reexpresada base oct-2022=100 (desde 1937)")
 
-    # Serie de la base vigente, tal cual la publica el INE
-    vigente = series_por_base.get("base_2022_10")
-    if vigente is not None and len(vigente):
-        db.upsert_observaciones(
-            con, "ipc_general_idx",
-            [(i.strftime("%Y-%m-%d"), v) for i, v in vigente.items()],
-            fuente="INE base oct-2022=100")
+    # 2. IPC general Total Pais (y control regional) desde dic-2010
+    regiones = _intento("general por region", ("general_total",),
+                        ine_ipc.parsear_general_regiones)
+    if regiones and len(regiones.get("total_pais", [])):
+        total += _upsert_serie(con, "ipc_general_idx", regiones["total_pais"],
+                               "INE base oct-2022=100")
+        # control cruzado contra la serie larga
+        if largo is not None and len(largo):
+            comun = regiones["total_pais"].index.intersection(largo.index)
+            dif = (regiones["total_pais"][comun] - largo[comun]).abs().max()
+            if dif > 0.01:
+                db.alerta(con, "estructura", "warning",
+                          f"Serie regiones vs. serie larga difieren hasta "
+                          f"{dif:.4f} puntos de indice", var_id="ipc_general_idx")
 
-    # Serie empalmada desde 1997, expresada en la base vigente
-    empalmada = ine_ipc.empalmar(series_por_base)
-    r = db.upsert_observaciones(
-        con, "ipc_general_empalmado",
-        [(i.strftime("%Y-%m-%d"), v) for i, v in empalmada.items()],
-        fuente="INE (empalme por variacion mensual)")
-    print(f"[etl] IPC empalmado: {len(empalmada)} obs "
-          f"desde {empalmada.index.min().date() if len(empalmada) else '-'}")
+    # 3. Divisiones COICOP 01-13 desde dic-2010
+    divisiones = _intento("divisiones", ("division", "pais"),
+                          ine_ipc.parsear_divisiones)
+    if divisiones is not None and len(divisiones):
+        for cod, grupo in divisiones.groupby("division"):
+            s = pd.Series(grupo["indice"].values,
+                          index=pd.DatetimeIndex(grupo["fecha"]))
+            total += _upsert_serie(con, f"ipc_div_{cod}", s,
+                                   "INE base oct-2022=100, division CCIF")
 
-    PROC.mkdir(parents=True, exist_ok=True)
-    empalmada.to_frame("ipc").to_parquet(PROC / "ipc_empalmado.parquet")
-    return r["nuevas"]
+    # 4. Nucleo oficial IPC-CE (excluye frutas, verduras y combustibles)
+    nucleo = _intento("IPC-CE (subyacente)", ("subyacente",),
+                      ine_ipc.parsear_subyacente)
+    if nucleo is not None and len(nucleo):
+        total += _upsert_serie(con, "ipc_subyacente_idx", nucleo,
+                               "INE IPC-CE base oct-2022=100")
+
+    if not parseo_ok:
+        raise RuntimeError("ninguna planilla del IPC pudo parsearse")
+
+    if largo is not None and len(largo):
+        PROC.mkdir(parents=True, exist_ok=True)
+        largo.to_frame("ipc").to_parquet(PROC / "ipc_empalmado.parquet")
+    return total
 
 
 @paso("licitaciones")

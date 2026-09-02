@@ -123,7 +123,8 @@ from src.etl import fred_series, seed  # noqa: E402
 ESCRITAS_POR_EL_ETL = {
     "tc_usduyu_interbancario", "tc_usduyu_prom_m", "tc_usduyu_cierre_m",
     "ui_valor", "ipc_general_idx", "ipc_general_empalmado",
-} | set(fred_series.SERIES)
+    "ipc_subyacente_idx",
+} | set(fred_series.SERIES) | {f"ipc_div_{c}" for c in seed.DIVISIONES_CCIF}
 
 with tempfile.TemporaryDirectory() as tmp:
     ruta = Path(tmp) / "t.db"
@@ -142,6 +143,56 @@ with tempfile.TemporaryDirectory() as tmp:
     except ValueError as e:
         check("variables.yaml" in str(e), "el error de var_id desconocido explica el arreglo")
     con.close()
+
+# ---------------------------------------------------------------------
+print("\n[6] Parsers del INE contra las planillas reales versionadas")
+BASE = Path(__file__).resolve().parents[1] / "data" / "raw" / "ine" / "base_2022_10"
+if not BASE.exists() or not any(BASE.iterdir()):
+    print("  (sin planillas en data/raw/ine/base_2022_10; se salta)")
+else:
+    r_largo = ine_ipc.buscar_archivo(BASE, "gral", "variaciones")
+    check(r_largo is not None, "planilla de serie general larga encontrada")
+    if r_largo:
+        s = ine_ipc.parsear_general_largo(r_largo)
+        check(len(s) > 1000, f"serie larga con {len(s)} obs (>1000)")
+        check(s.index.min().year == 1937, f"arranca en {s.index.min().date()}")
+        check((s > 0).all(), "sin ceros ni negativos")
+        var_m = s.pct_change().dropna()
+        check(abs(s.loc["2022-10-01"] - 100) < 0.5,
+              f"base oct-2022 ~ 100 (da {s.loc['2022-10-01']:.2f})")
+        # la inflacion mensual post-2011 debe ser moderada
+        post = var_m[var_m.index >= "2011-01-01"] * 100
+        check(post.between(-2, 5).all(),
+              "toda variacion mensual 2011+ dentro de [-2%, +5%]")
+
+    r_reg = ine_ipc.buscar_archivo(BASE, "general_total")
+    check(r_reg is not None, "planilla por region encontrada")
+    if r_reg:
+        reg = ine_ipc.parsear_general_regiones(r_reg)
+        tp = reg["total_pais"]
+        check(len(tp) >= 180, f"total pais con {len(tp)} obs desde {tp.index.min().date()}")
+        if r_largo:
+            comun = tp.index.intersection(s.index)
+            dif = (tp[comun] - s[comun]).abs().max()
+            check(dif < 0.01, f"regiones y serie larga coinciden (dif max {dif:.6f})")
+
+    r_div = ine_ipc.buscar_archivo(BASE, "division", "pais")
+    check(r_div is not None, "planilla de divisiones encontrada")
+    if r_div:
+        d = ine_ipc.parsear_divisiones(r_div)
+        divs = sorted(d["division"].unique())
+        check(divs == sorted(seed.DIVISIONES_CCIF),
+              f"13 divisiones CCIF completas (hay {len(divs)})")
+        obs = d.groupby("division").size()
+        check(obs.nunique() == 1 and obs.iloc[0] >= 180,
+              f"todas las divisiones con la misma cobertura ({obs.iloc[0]} meses)")
+
+    r_sub = ine_ipc.buscar_archivo(BASE, "subyacente")
+    check(r_sub is not None, "planilla del IPC-CE encontrada")
+    if r_sub:
+        n = ine_ipc.parsear_subyacente(r_sub)
+        check(len(n) >= 40, f"IPC-CE con {len(n)} obs desde {n.index.min().date()}")
+        check(abs(n.loc["2022-10-01"] - 100) < 1e-6, "IPC-CE ancla 100 en oct-2022")
 
 # ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")

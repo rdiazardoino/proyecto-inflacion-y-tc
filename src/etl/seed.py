@@ -51,6 +51,36 @@ DERIVADAS = [
 ]
 
 
+# Divisiones CCIF 2018 del IPC base octubre 2022 (13 divisiones).
+# variables.yaml las documenta como una sola entrada (ipc_divisiones_idx);
+# aca se expanden a una variable por division para el bottom-up.
+DIVISIONES_CCIF = {
+    "01": "Alimentos y bebidas no alcoholicas",
+    "02": "Bebidas alcoholicas y tabaco",
+    "03": "Prendas de vestir y calzado",
+    "04": "Alojamiento, agua, electricidad, gas y otros combustibles",
+    "05": "Muebles, articulos y servicios para el hogar",
+    "06": "Salud",
+    "07": "Transporte",
+    "08": "Informacion y comunicacion",
+    "09": "Recreacion, deporte y cultura",
+    "10": "Servicios de ensenanza",
+    "11": "Restaurantes y servicios de alojamiento",
+    "12": "Seguros y servicios financieros",
+    "13": "Cuidado personal, proteccion social y bienes diversos",
+}
+
+VARIABLES_DIVISIONES = [
+    dict(var_id=f"ipc_div_{cod}",
+         nombre=f"IPC division {cod} - {nombre} (indice Total Pais)",
+         frecuencia="M", fuente="INE",
+         transformacion="pct_m,incidencia",
+         hipotesis_econ="Base del modelo bottom-up y de las incidencias.",
+         modelo_destino="inflacion", prioridad="indispensable")
+    for cod, nombre in DIVISIONES_CCIF.items()
+]
+
+
 def _entradas_yaml() -> list[dict]:
     cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
     entradas = []
@@ -70,7 +100,7 @@ def sembrar_variables(con: sqlite3.Connection) -> int:
                 "transformacion", "hipotesis_econ", "modelo_destino",
                 "prioridad", "notas")
     n = 0
-    for item in _entradas_yaml() + DERIVADAS:
+    for item in _entradas_yaml() + DERIVADAS + VARIABLES_DIVISIONES:
         fila = {}
         for c in columnas:
             v = item.get(c)
