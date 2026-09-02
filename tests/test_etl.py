@@ -114,6 +114,36 @@ for txt, esperado in [("Nota del Tesoro en UI a 5 años", "UI"),
           f"'{txt[:35]}' -> {esperado}")
 
 # ---------------------------------------------------------------------
+print("\n[5] Siembra de variables cubre todo var_id que escribe el ETL")
+# Este test habria detectado la falla de la corrida historica 2026-08-06:
+# el ETL escribia observaciones de var_ids que no existian en `variables`
+# y TODO insert moria por FOREIGN KEY.
+from src.etl import fred_series, seed  # noqa: E402
+
+ESCRITAS_POR_EL_ETL = {
+    "tc_usduyu_interbancario", "tc_usduyu_prom_m", "tc_usduyu_cierre_m",
+    "ui_valor", "ipc_general_idx", "ipc_general_empalmado",
+} | set(fred_series.SERIES)
+
+with tempfile.TemporaryDirectory() as tmp:
+    ruta = Path(tmp) / "t.db"
+    db.inicializar(ruta)
+    con = db.conectar(ruta)
+    n = seed.sembrar_variables(con)
+    check(n >= 30, f"la siembra registra el inventario completo ({n} variables)")
+    registradas = seed.variables_registradas(con)
+    faltan = ESCRITAS_POR_EL_ETL - registradas
+    check(not faltan, f"ningun var_id del ETL queda sin registrar (faltan: {faltan or '-'})")
+
+    # y el guardrail de db.py rechaza con mensaje claro un var_id desconocido
+    try:
+        db.upsert_observaciones(con, "no_existe", [("2026-01-01", 1.0)])
+        check(False, "upsert con var_id desconocido debe fallar")
+    except ValueError as e:
+        check("variables.yaml" in str(e), "el error de var_id desconocido explica el arreglo")
+    con.close()
+
+# ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")
 for f in fallos:
     print("  -", f)

@@ -210,6 +210,26 @@ tipo_cambio:
     modelo_destino: tc
     prioridad: indispensable
 
+  - var_id: ust_2y
+    nombre: "Rendimiento Treasury 2 anos"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual, diff]
+    hipotesis_econ: "Tramo corto de la curva americana; ancla del diferencial de tasas a 1-2 anos."
+    modelo_destino: tc
+    prioridad: importante
+
+  - var_id: ust_3m
+    nombre: "Rendimiento T-Bill 3 meses"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual, diff]
+    hipotesis_econ: "Tasa corta USD para el carry y el forward por paridad cubierta."
+    modelo_destino: tc
+    prioridad: importante
+
   - var_id: fed_funds
     nombre: "Fed funds effective rate"
     fuente: FRED

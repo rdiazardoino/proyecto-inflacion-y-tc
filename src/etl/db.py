@@ -97,6 +97,14 @@ def upsert_observaciones(
     vintage = vintage or hoy()
     descarga = hoy()
 
+    existe = con.execute("SELECT 1 FROM variables WHERE var_id = ?",
+                         (var_id,)).fetchone()
+    if not existe:
+        raise ValueError(
+            f"var_id '{var_id}' no esta registrado en la tabla variables. "
+            f"Agregarlo a config/variables.yaml o a seed.DERIVADAS y "
+            f"correr seed.sembrar_variables() antes de insertar datos.")
+
     previos = dict(
         con.execute(
             """

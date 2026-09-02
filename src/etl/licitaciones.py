@@ -31,8 +31,9 @@ import sys
 from pathlib import Path
 from urllib.parse import urljoin
 
-import requests
 from bs4 import BeautifulSoup
+
+from src.etl import http_client
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "raw" / "licitaciones"
@@ -71,8 +72,7 @@ def _guardar(url: str, subdir: str) -> Path | None:
     if destino.exists():
         return destino
     try:
-        r = requests.get(url, headers=HEADERS, timeout=120)
-        r.raise_for_status()
+        r = http_client.get(url, timeout=120)
         destino.write_bytes(r.content)
         return destino
     except Exception as e:                            # noqa: BLE001

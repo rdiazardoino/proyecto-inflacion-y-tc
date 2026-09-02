@@ -26,7 +26,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.etl import bcu_cotizaciones, fred_series, ine_ipc, licitaciones  # noqa: E402
-from src.etl import db  # noqa: E402
+from src.etl import db, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 PROC = ROOT / "data" / "processed"
@@ -247,8 +247,9 @@ def main() -> None:
     db.respaldar()
     db.inicializar()
     con = db.conectar()
+    n_vars = seed.sembrar_variables(con)
     t0 = time.time()
-    print(f"[etl] modo={args.modo} desde={desde}")
+    print(f"[etl] modo={args.modo} desde={desde} ({n_vars} variables sembradas)")
 
     try:
         etl_tc(con, desde)

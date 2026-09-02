@@ -26,7 +26,9 @@ SERIES = {
     "soja":       "PSOYBUSDM",   # mensual, precio global soja
     "cpi_us":     "CPIAUCSL",    # mensual
     "vix":        "VIXCLS",
-    "usduyu_fred": "DEXUSUY",    # control cruzado contra el SOAP del BCU
+    # "usduyu_fred": "DEXUSUY" eliminado: FRED devuelve 400, la serie no
+    # existe (verificado 6-ago-2026). El control cruzado del TC queda
+    # pendiente de otra fuente.
 }
 
 

@@ -25,16 +25,28 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import pandas as pd
-import requests
 from bs4 import BeautifulSoup
+
+from src.etl import http_client
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "raw" / "ine"
 
+# Cada base tiene una lista de URLs candidatas: gub.uy reorganiza rutas sin
+# redirect. Se usa la primera que responda con planillas.
 PAGINAS = {
-    "base_2022_10": "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-octubre-2022100",
-    "base_2010_12": "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-diciembre-2010100",
-    "base_1997_03": "https://www.gub.uy/instituto-nacional-estadistica/datos/series-historicas-ipc-base-marzo-1997100",
+    "base_2022_10": [
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-octubre-2022100",
+    ],
+    "base_2010_12": [
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-diciembre-2010100",
+    ],
+    "base_1997_03": [
+        # la ruta /datos/ devolvio 404 el 6-ago-2026; se prueban variantes
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-marzo-1997100",
+        "https://www.gub.uy/instituto-nacional-estadistica/datos/series-historicas-ipc-base-marzo-1997100",
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/serie-historica-ipc-base-marzo-1997100",
+    ],
 }
 
 # Orden cronologico de las bases, de la mas vieja a la vigente
@@ -55,8 +67,7 @@ MESES = {
 # ---------------------------------------------------------------------
 def descubrir_planillas(url: str, timeout: int = 60) -> list[str]:
     """Enlaces a planillas encontrados en una pagina de serie historica."""
-    r = requests.get(url, headers=HEADERS, timeout=timeout)
-    r.raise_for_status()
+    r = http_client.get(url, timeout=timeout)
     sopa = BeautifulSoup(r.text, "html.parser")
     enlaces = []
     for a in sopa.find_all("a", href=True):
@@ -73,8 +84,7 @@ def descargar(url: str, destino_dir: Path, timeout: int = 120) -> Path:
     destino = destino_dir / f"{dt.date.today():%Y%m%d}_{nombre}"
     if destino.exists():
         return destino
-    r = requests.get(url, headers=HEADERS, timeout=timeout)
-    r.raise_for_status()
+    r = http_client.get(url, timeout=timeout)
     destino.write_bytes(r.content)
     return destino
 
@@ -82,15 +92,17 @@ def descargar(url: str, destino_dir: Path, timeout: int = 120) -> Path:
 def bajar_todo() -> dict[str, list[Path]]:
     """Descarga las planillas de las tres bases. Devuelve rutas por base."""
     salida: dict[str, list[Path]] = {}
-    for clave, url in PAGINAS.items():
-        try:
-            urls = descubrir_planillas(url)
-        except Exception as e:                       # noqa: BLE001
-            print(f"[ine] no se pudo leer {clave}: {e}")
-            salida[clave] = []
-            continue
-        if not urls:
-            print(f"[ine] AVISO: ninguna planilla encontrada en {clave} ({url})")
+    for clave, candidatas in PAGINAS.items():
+        urls: list[str] = []
+        for url in candidatas:
+            try:
+                urls = descubrir_planillas(url)
+            except Exception as e:                   # noqa: BLE001
+                print(f"[ine] no se pudo leer {clave} en {url}: {e}")
+                continue
+            if urls:
+                break
+            print(f"[ine] AVISO: ninguna planilla en {url}")
         rutas = []
         for u in urls:
             try:
