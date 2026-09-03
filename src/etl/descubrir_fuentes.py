@@ -49,6 +49,11 @@ FUENTES: dict[str, list[str]] = {
     # en el eportal Liferay (ganges.bcu.gub.uy:8443), embebido por iframe
     # (verificado en el HTML archivado del ITCR el 3-sep-2026).
     "expectativas_bcu": [
+        # "subsitio.bcu.gub.uy" es un TERCER sitio (ni SharePoint clasico ni
+        # el eportal Liferay), hallado el 3-sep-2026: parece la migracion
+        # mas reciente de contenido de politica monetaria/expectativas.
+        "https://subsitio.bcu.gub.uy/politica-monetaria/",
+        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx",
         "https://ganges.bcu.gub.uy:8443/eportal/web/guest/expectativas-economicas",
         "https://ganges.bcu.gub.uy:8443/eportal/web/guest/eee",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Expectativas-Economicas.aspx",
@@ -59,6 +64,7 @@ FUENTES: dict[str, list[str]] = {
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tipo-de-cambio-real-efectivo.aspx",
     ],
     "tpm_bcu": [
+        "https://subsitio.bcu.gub.uy/politica-monetaria/",
         # la TPM se anuncia por comunicado del Copom; estas paginas enlazan
         # los comunicados y el IPOM (que trae la serie)
         "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/default.aspx",
