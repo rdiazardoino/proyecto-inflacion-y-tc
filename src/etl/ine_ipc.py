@@ -22,7 +22,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import unquote, urljoin
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -79,8 +79,18 @@ def descubrir_planillas(url: str, timeout: int = 60) -> list[str]:
 
 
 def descargar(url: str, destino_dir: Path, timeout: int = 120) -> Path:
+    """
+    Descarga a destino_dir/YYYYMMDD_<nombre>. El nombre se decodifica con
+    unquote() ANTES de sanitizar: si no, "%20" (espacio) pasa a "_20" en vez
+    de un separador limpio, y filenames como "IMSN_M_B08.xls" salen
+    "IMSN_20M_20B08.xls" -- rompe cualquier matching por fragmentos de
+    nombre (ver ine_ims.buscar_archivo). Bug real detectado el 3-sep-2026:
+    todas las planillas descargadas hasta ese commit tienen el nombre sucio;
+    quedan asi en el historial (no se renombran retroactivamente), pero las
+    nuevas descargas salen limpias.
+    """
     destino_dir.mkdir(parents=True, exist_ok=True)
-    nombre = re.sub(r"[^\w.\-]", "_", url.split("/")[-1].split("?")[0])
+    nombre = re.sub(r"[^\w.\-]", "_", unquote(url.split("/")[-1].split("?")[0]))
     destino = destino_dir / f"{dt.date.today():%Y%m%d}_{nombre}"
     if destino.exists():
         return destino

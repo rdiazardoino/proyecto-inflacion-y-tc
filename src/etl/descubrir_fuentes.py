@@ -105,10 +105,43 @@ def _archivar(url: str, subdir: Path) -> Path | None:
         return None
 
 
+# La Encuesta de Expectativas tiene naming predecible en el sitio clasico:
+# ".../Encuesta de Expectativas Econmicas/iees06i{MM}{YY}.pdf" (asi, con
+# el typo "Econmicas" sin tilde -- verificado contra dos publicaciones
+# reales: iees06i0426.pdf = abril 2026, iees06i1225.pdf = dic 2025).
+# El Liferay nuevo (eportal) y el .aspx clasico son cascarones sin el dato;
+# se intenta este patron directo ademas del scraping normal.
+_CARPETA_EXPECTATIVAS = (
+    "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/"
+    "Encuesta%20de%20Expectativas%20Econmicas/")
+
+
+def _intentar_expectativas_por_patron(subdir: Path, meses_atras: int = 4) -> int:
+    hoy = dt.date.today().replace(day=1)
+    guardados = 0
+    for i in range(meses_atras):
+        mes = hoy.month - i
+        anio = hoy.year
+        while mes <= 0:
+            mes += 12
+            anio -= 1
+        url = f"{_CARPETA_EXPECTATIVAS}iees06i{mes:02d}{anio % 100:02d}.pdf"
+        if _archivar(url, subdir):
+            guardados += 1
+    return guardados
+
+
 def descubrir_fuente(clave: str, candidatas: list[str]) -> dict:
     """Archiva la pagina y sus planillas. Devuelve resumen para el log."""
     subdir = RAW / clave
     resumen = {"clave": clave, "pagina": None, "planillas": 0, "enlaces_interes": []}
+
+    if clave == "expectativas_bcu":
+        n = _intentar_expectativas_por_patron(subdir)
+        if n:
+            resumen["pagina"] = _CARPETA_EXPECTATIVAS
+            resumen["planillas"] += n
+            print(f"[desc] {clave}: {n} PDF por patron de nombre predecible")
 
     for url in candidatas:
         ruta = _archivar(url, subdir)
