@@ -37,32 +37,34 @@ Notas de cobertura:
 Tiene tres capas distintas y el dato real vive en lugares distintos según la serie:
 
 1. Páginas clásicas `.aspx` (SharePoint) — cascarones vacíos, sin el dato.
-2. Un portal nuevo Liferay embebido por iframe (`ganges.bcu.gub.uy:8443/eportal/...`)
-   — confirmado que existe (p.ej. `/eportal/web/guest/tcre` para el ITCR), pero la
-   tabla de datos se carga por JavaScript/AJAX después de la carga inicial de la
-   página: un `GET` simple (sin ejecutar JS) trae el cascarón del portal, no la
-   serie. Requeriría un navegador headless (Playwright) para renderizar, o
-   encontrar el endpoint AJAX que llama internamente.
-3. Archivos sueltos en el dominio clásico con naming predecible — así se resolvió
-   el TC (SOAP). Para expectativas se intentó el patrón
-   `.../Encuesta de Expectativas Econmicas/iees06i{MM}{YY}.pdf` (confirmado con
-   ejemplos reales de 2021 a abril-2026), pero **los meses jun-set/2026 dieron
-   404**: el contenido se migró a otro lado en algún punto de 2026. Se encontró
-   un **cuarto dominio** (`subsitio.bcu.gub.uy`, un sitio moderno separado tanto
-   del SharePoint clásico como del eportal Liferay) que parece ser el destino de
-   la migración de la sección de política monetaria — agregado como candidato,
-   pendiente de verificar en la próxima corrida si sirve datos reales o es otra
-   SPA que requiere JavaScript.
+2. Un portal Liferay embebido por iframe (`ganges.bcu.gub.uy:8443/eportal/...`) —
+   confirmado que existe (`/eportal/web/guest/tcre` para el ITCR responde 200 con
+   una página real del BCU), pero la tabla de datos se carga por JavaScript/AJAX
+   después de la carga inicial: un `GET` simple trae el cascarón del portal
+   (menús, título "TCRE"), no la serie.
+3. Un sitio moderno (`subsitio.bcu.gub.uy/politica-monetaria/`), hallado el
+   3-sep-2026 buscando dónde migró el contenido tras el 404 en las rutas clásicas
+   — mismo problema: 13 scripts externos, el `<body>` estático trae solo el texto
+   introductorio ("¿Qué es la política monetaria?"), la TPM y los datos se
+   renderizan client-side.
+
+**Conclusión, no es un problema de URL: es estructural.** Las tres plataformas
+nuevas del BCU (Liferay, subsitio) exigen ejecutar JavaScript para ver el dato.
+Ninguna URL alternativa lo resuelve con `requests.get()`. La única vía
+automatizada real es un navegador headless (Playwright) corriendo en GitHub
+Actions (que sí tiene red completa, a diferencia del sandbox de análisis) — no
+implementado todavía, queda como decisión pendiente por su costo (nueva
+dependencia pesada, automatizar contra 3 portales sin poder probarlos desde acá).
 
 **Nota operativa: el BCU apaga sus servicios web de noche** (connect timeout a las
 ~22:30 de Montevideo, incluido el SOAP de cotizaciones que de día funciona); el
 descubrimiento debe correr en horario hábil de Uruguay.
 
-| Serie | Estado | Dónde se obtiene | Plan |
-|---|---|---|---|
-| Encuesta de Expectativas BCU (inflación 12/24m, TC) | intentando por patrón de nombre | [Expectativas Económicas](https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Expectativas-Economicas.aspx) | esperar el próximo descubrimiento; si no trae el PDF, **bajarlo manualmente** de esa página y subirlo a `data/raw/descubrimiento/expectativas_bcu/` |
-| ITCR global/bilaterales | bloqueado (dato vía AJAX) | [Tipo de cambio real efectivo](https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tipo-de-cambio-real-efectivo.aspx) → botón de descarga en la página | **requiere descarga manual**: abrir la página, exportar la serie, subir el XLS/CSV a `data/raw/descubrimiento/itcr_bcu/` |
-| TPM (decisiones Copom; hoy 5,75%) | bloqueado (mismo portal) | [Política Económica y Mercados](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/default.aspx) — comunicados Copom e Informe de Política Monetaria (IPOM, trimestral, con la serie de TPM en anexo) | alternativa: extraer del IPOM en PDF (ya se sabe descargar PDFs, ver licitaciones) |
+| Serie | Estado | Alternativa mientras tanto |
+|---|---|---|
+| Encuesta de Expectativas BCU (inflación 12/24m, TC) | bloqueado (SPA) | **descarga manual**: abrir [Política Monetaria — BCU](https://subsitio.bcu.gub.uy/politica-monetaria/), exportar la encuesta, subir el archivo a `data/raw/descubrimiento/expectativas_bcu/` |
+| ITCR global/bilaterales | bloqueado (portal Liferay) | **descarga manual**: abrir [`/eportal/web/guest/tcre`](https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre), exportar la serie, subir a `data/raw/descubrimiento/itcr_bcu/` |
+| TPM (decisiones Copom; hoy 5,75%) | bloqueado (SPA) | extraer del [Informe de Política Monetaria](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf) (PDF trimestral con la serie en anexo, sí descargable) |
 | Combustibles (precios de venta al público) | página encontrada, sin planillas enlazadas | [URSEA — precios de referencia y PMIT](https://www.gub.uy/unidad-reguladora-servicios-energia-agua/comunicacion/publicaciones/precios-venta-publico-referencia-para-gasolinas-gasoil-50-s-pmit-2) | revisar si la tabla está en el cuerpo de la página (HTML) en vez de un archivo adjunto |
 | Tarifas UTE/OSE/Antel | sin explorar | [INE — precios de servicios públicos](https://www.ine.gub.uy/precios-de-servicios-publicos); decretos de Presidencia | tabla `eventos` con Δ% ponderado |
 | Licitaciones LRM/Notas del Tesoro | crudos archivados, parser sin calibrar | BCU Operaciones Monetarias / UGD (`data/raw/licitaciones/`) | calibrar `PATRONES` |

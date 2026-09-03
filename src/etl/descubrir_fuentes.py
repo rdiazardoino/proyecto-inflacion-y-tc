@@ -64,6 +64,11 @@ FUENTES: dict[str, list[str]] = {
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tipo-de-cambio-real-efectivo.aspx",
     ],
     "tpm_bcu": [
+        # el IPOM trimestral SI es un PDF estatico (no SPA) y trae la serie
+        # de TPM en anexo; hallado por busqueda web el 3-sep-2026. Va PRIMERO:
+        # descubrir_fuente() para en el primer candidato que responda, y un
+        # PDF real vale mas que el cascaron SPA de subsitio.
+        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf",
         "https://subsitio.bcu.gub.uy/politica-monetaria/",
         # la TPM se anuncia por comunicado del Copom; estas paginas enlazan
         # los comunicados y el IPOM (que trae la serie)
@@ -153,12 +158,13 @@ def descubrir_fuente(clave: str, candidatas: list[str]) -> dict:
         ruta = _archivar(url, subdir)
         if ruta is None:
             continue
-        resumen["pagina"] = url
+        if resumen["pagina"] is None:
+            resumen["pagina"] = url
         try:
             sopa = BeautifulSoup(ruta.read_bytes(), "html.parser")
         except Exception as e:                        # noqa: BLE001
             print(f"[desc] {clave}: HTML no parseable: {e}")
-            break
+            continue
 
         enlaces = [urljoin(url, a["href"]) for a in sopa.find_all("a", href=True)]
         # Los .aspx del BCU embeben el contenido real (eportal Liferay) por
@@ -188,7 +194,11 @@ def descubrir_fuente(clave: str, candidatas: list[str]) -> dict:
         for u in planillas[:MAX_PLANILLAS]:
             if _archivar(u, subdir):
                 resumen["planillas"] += 1
-        break  # primera pagina que respondio alcanza
+        if resumen["planillas"] > 0:
+            break  # ya encontramos planillas reales, no hace falta seguir
+        # si esta candidata no trajo planillas (cascaron SPA, portal vacio),
+        # se sigue probando la proxima: "primera que responde" no alcanza si
+        # la respuesta no tiene el dato.
 
     print(f"[desc] {clave}: pagina={'OK' if resumen['pagina'] else 'FALLO'}, "
           f"planillas={resumen['planillas']}, "
