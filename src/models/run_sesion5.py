@@ -65,6 +65,12 @@ def correr_escenarios(con, series: dict) -> dict[str, pd.DataFrame]:
 
     resultados = {}
     hoy = pd.Timestamp.today().date().isoformat()
+    # mismo criterio que ensemble.guardar(): append-only ENTRE vintages,
+    # idempotente DENTRO del mismo vintage_datos (re-correr el mismo mes no
+    # debe acumular duplicados en pronosticos).
+    con.execute(
+        "DELETE FROM pronosticos WHERE modelo_id='var2_reducido' AND vintage_datos=?",
+        (str(ORIGEN.date()),))
     for clave, esc in cfg["escenarios"].items():
         pron = var_escenarios.pronosticos(
             df_v, ORIGEN, HORIZONTES,

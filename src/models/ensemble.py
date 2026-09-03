@@ -158,6 +158,14 @@ def guardar(con, objetivo: str, origen: pd.Timestamp, detalle: pd.DataFrame,
                "VALUES ('ensemble_v1','ensemble',?,?,?,?,1)",
                (objetivo, "Promedio ponderado por inverso del MAE (corte 2022+), piso 10%", "v1", hoy))
 
+    # pronosticos es append-only ENTRE vintages (nunca se pisa historia real
+    # cuando cambia el corte de datos), pero DENTRO del mismo vintage_datos
+    # una re-corrida (re-generar el mismo mes por un fix o para revisar) debe
+    # reemplazar, no acumular duplicados -- de ahi el DELETE acotado a
+    # (objetivo, escenario='base', vintage_datos) antes de insertar.
+    con.execute("DELETE FROM pronosticos WHERE objetivo=? AND escenario='base' AND vintage_datos=?",
+               (objetivo, str(origen.date())))
+
     for _, r in ensemble.iterrows():
         fecha_obj = (origen + pd.DateOffset(months=int(r["horizonte_meses"]))).strftime("%Y-%m-%d")
         valor = r["valor"]
