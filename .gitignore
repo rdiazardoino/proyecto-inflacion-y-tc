@@ -27,3 +27,4 @@ data/raw/**/*.pdf
 # descargarlas por si mismo (sin red a ine.gub.uy) ni bajar artifacts
 # de Actions (proxy bloquea *.blob.core.windows.net).
 !data/raw/ine/**
+!data/raw/descubrimiento/**

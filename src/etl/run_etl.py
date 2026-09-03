@@ -26,7 +26,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.etl import bcu_cotizaciones, fred_series, ine_ipc, licitaciones  # noqa: E402
-from src.etl import db, seed  # noqa: E402
+from src.etl import db, descubrir_fuentes, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 PROC = ROOT / "data" / "processed"
@@ -207,6 +207,24 @@ def etl_licitaciones(con) -> int:
     return n
 
 
+@paso("descubrimiento_fuentes")
+def etl_descubrimiento(con) -> int:
+    """
+    Archiva paginas y planillas de las fuentes prioridad A que aun no
+    tienen ingestor (expectativas BCU, ITCR, TPM, IMS, combustibles).
+    Los crudos versionados permiten calibrar los parsers sin red.
+    """
+    resumenes = descubrir_fuentes.descubrir_todo()
+    total = 0
+    for r in resumenes:
+        if r["pagina"] is None:
+            db.alerta(con, "estructura", "warning",
+                      f"Descubrimiento de {r['clave']}: ninguna URL candidata "
+                      f"respondio. Actualizar FUENTES en descubrir_fuentes.py.")
+        total += r["planillas"]
+    return total
+
+
 # ---------------------------------------------------------------------
 def controles(con) -> None:
     """Chequeos de frescura y de rango. Alertan, no abortan."""
@@ -307,6 +325,7 @@ def main() -> None:
             etl_licitaciones(con)
         if args.modo in ("mensual", "historico"):
             etl_ipc(con)
+            etl_descubrimiento(con)
 
         controles(con)
         resumen(con)
