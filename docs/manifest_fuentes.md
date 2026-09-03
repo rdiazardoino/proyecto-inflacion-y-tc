@@ -62,11 +62,51 @@ descubrimiento debe correr en horario hábil de Uruguay.
 
 | Serie | Estado | Alternativa mientras tanto |
 |---|---|---|
-| Encuesta de Expectativas BCU (inflación 12/24m, TC) | **en prueba** — ver "Descubrimiento con Chromium" abajo | **descarga manual**: abrir [Política Monetaria — BCU](https://subsitio.bcu.gub.uy/politica-monetaria/), exportar la encuesta, subir el archivo a `data/raw/descubrimiento/expectativas_bcu/` |
-| ITCR global/bilaterales | **en prueba** — ver "Descubrimiento con Chromium" abajo | **descarga manual**: abrir [`/eportal/web/guest/tcre`](https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre), exportar la serie, subir a `data/raw/descubrimiento/itcr_bcu/` |
-| TPM (decisiones Copom) | **resuelto parcialmente** — ver abajo | [IPOM](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf) (trimestral, sí es PDF estático) |
-| TPM histórica completa (todas las reuniones del Copom) | sin ingestor; candidatas de URL sin confirmar en `descubrir_fuentes.py` (`tpm_historica_bcu`) | pendiente de lo que archive el próximo ETL mensual |
-| IMAE (brecha de producto) | sin ingestor; candidatas de URL sin confirmar en `descubrir_fuentes.py` (`imae_bcu`) y `descubrir_js.py` (`imae_bcu_js`) | pendiente de lo que archive el próximo ETL mensual |
+| Expectativas de inflación 12/24m (mediana, Encuesta BCU) | **resuelto** — ver "Expectativas de inflación" abajo | — |
+| Expectativas de TC / TPM (misma encuesta, sección "Mercado Financiero") | bloqueado: listado de documentos cargado por AJAX, sin valores en HTML estático | descarga manual del documento más reciente listado en esa sección de la página |
+| ITCR global/bilaterales | **diagnosticado, no resuelto** — ver "ITCR" abajo | **descarga manual**: abrir [`/eportal/web/guest/tcre`](https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre), Herramientas (ícono arriba a la izquierda del gráfico) → exportar .xls |
+| TPM (decisiones Copom) | **resuelto parcialmente** — ver más abajo | [IPOM](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf) (trimestral, sí es PDF estático) |
+| TPM histórica completa (todas las reuniones del Copom) | sin ingestor; primer intento (3-sep-2026) no encontró planilla, solo la página de Comité de Política Monetaria sin datos adjuntos | pendiente |
+| IMAE (brecha de producto) | sin ingestor; localizado el link "IMAE" en `subsitio.bcu.gub.uy/estadisticas/` pero es ruteo SPA (sin URL destino confirmada aún) | pendiente |
+
+### Expectativas de inflación — resuelto sin navegador (agregado 3-sep-2026)
+
+Hallazgo real de la primera corrida del ETL mensual con los pasos nuevos:
+`https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx`
+(página clásica SharePoint) **sí trae el dato en HTML estático** — al
+contrario de lo que la sesión 1 había concluido para "todo lo clásico del
+BCU". La mediana de expectativas de inflación a 12 y 24 meses viene como
+texto narrativo dentro de un JSON embebido en un `<script>` de un widget
+("La mediana de expectativas de inflación a 24 meses en agosto se mantiene
+en la meta de inflación del BCU de 4.5%..."). `src/etl/bcu_expectativas.py`
+lo descarga con `requests` (vía `http_client`, sin Playwright) y lo extrae
+por regex sobre ese texto. Nuevas variables: `expectativas_inflacion_12m`,
+`expectativas_inflacion_24m` (ver `config/variables.yaml`).
+
+**Limitación honesta:** solo el valor vigente al momento de la consulta,
+igual que la TPM vía IPOM — no hay serie histórica por esta vía (el listado
+de encuestas anteriores está en una tabla cargada por AJAX). Corriendo el
+ETL mensual se va construyendo una serie real hacia adelante. La sección
+"Expectativas del Mercado Financiero" (TC, TPM esperada) de la misma
+página **no** trae valores en HTML estático — es un listado de documentos,
+mismo patrón AJAX — sigue pendiente.
+
+### ITCR — diagnosticado con Chromium, automatización aún no resuelta
+
+El eportal Liferay (`ganges.bcu.gub.uy:8443/eportal/web/guest/tcre`) SÍ
+renderiza con Chromium headless (`src/etl/descubrir_js.py`, paso
+`descubrimiento_fuentes_js`) — 450KB de HTML real, título "TCRE - Liferay".
+Pero el dato no vive en una tabla HTML: es un gráfico de **Sencha Ext JS**
+dibujado sobre `<canvas>` (identificado por las clases `x-surface-canvas` e
+`ext-element-*`), con exportación a `.xls`/`.jpg` solo vía un ícono en la
+esquina superior izquierda del gráfico → menú "Herramientas" → descargar.
+Automatizar ese click con Playwright es posible en principio, pero sin
+poder ver el render real (el sandbox de análisis no llega a `bcu.gub.uy`)
+programar clicks a ciegas sobre un ícono dibujado en canvas es demasiado
+frágil para hacerlo sin verificación visual — **queda pendiente para una
+iteración con capturas de pantalla reales** (descargar el HTML ya archivado
+en `data/raw/descubrimiento/itcr_bcu_js/` no alcanza: hay que ver el
+render, no el HTML crudo). Mientras tanto, descarga manual.
 
 ### Descubrimiento con Chromium (Playwright) — agregado 3-sep-2026
 
@@ -77,25 +117,26 @@ real (Chromium headless, instalado en el workflow con
 que termine el tráfico de red (`wait_until="networkidle"` + 3s de margen
 para AJAX lento), y archiva el HTML ya renderizado, cualquier planilla que
 solo aparece en el DOM post-render, y las tablas HTML visibles (volcadas a
-CSV — frecuente que el portal Liferay muestre el dato en una tabla en vez
-de una planilla descargable).
+CSV). Soporta además `clic_texto`: clickear un texto visible después del
+primer render, para páginas SPA que enrutan por JS sin `<a href>` navegable
+(usado para seguir el link "IMAE" en `subsitio.bcu.gub.uy/estadisticas/`).
 
-**No se pudo probar contra las páginas reales de BCU** (el sandbox de
-análisis no tiene salida a `bcu.gub.uy`, solo GitHub Actions la tiene). Se
-validó la mecánica contra una página de prueba local servida en el propio
-sandbox — confirmado que Playwright funciona en este entorno, que captura
-correctamente contenido inyectado por `setTimeout`, descarga el archivo
-enlazado post-render, y extrae la tabla a CSV. La calibración real (¿la URL
-de `subsitio.bcu.gub.uy/politica-monetaria/` sigue siendo válida?, ¿el
-`eportal` de `itcr_bcu_js` responde fuera de horario hábil de Uruguay?, ¿qué
-forma tiene el HTML/tabla real?) se hace la primera vez que el ETL mensual
-corra este paso y archive algo real en `data/raw/descubrimiento/*_js/`.
+Validado contra el BCU real el 3-sep-2026 (primera corrida manual del
+workflow tras agregar esto): renderizó las tres páginas sin error de
+`goto()`. Dos bugs reales encontrados y corregidos en esa corrida:
 
-Bug real encontrado durante esa prueba local, antes de commitear: en pandas
-≥2.1 (proyecto en 3.0.5), `pd.read_html()` dejó de aceptar un string HTML
-literal — lo interpreta como ruta de archivo o URL y tira
-`FileNotFoundError` con el HTML entero como "nombre de archivo". Corregido
-envolviendo el string en `io.StringIO()`.
+1. En pandas ≥2.1 (proyecto en 3.0.5), `pd.read_html()` dejó de aceptar un
+   string HTML literal — lo interpreta como ruta de archivo o URL y tira
+   `FileNotFoundError` con el HTML entero como "nombre de archivo".
+   Corregido envolviendo el string en `io.StringIO()` (encontrado antes de
+   commitear, contra una página de prueba local).
+2. Contra el HTML real del BCU, `pd.read_html()` necesitó el flavor
+   `html5lib` como fallback (lxml no pudo parsear ese HTML) y la
+   dependencia no estaba instalada — `ImportError` no capturado que
+   abortaba toda la función antes de cerrar el navegador. Agregado
+   `html5lib` a `requirements.txt` y ensanchado el `except` a cualquier
+   excepción (no solo `ValueError`) para que un fallo ahí nunca tire abajo
+   el resto del archivado.
 
 ### TPM: extracción del IPOM (resuelta con una limitación documentada)
 

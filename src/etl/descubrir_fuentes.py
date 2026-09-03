@@ -59,11 +59,15 @@ FUENTES: dict[str, list[str]] = {
     # en el eportal Liferay (ganges.bcu.gub.uy:8443), embebido por iframe
     # (verificado en el HTML archivado del ITCR el 3-sep-2026).
     "expectativas_bcu": [
+        # CONFIRMADO 3-sep-2026: esta pagina SI responde con el dato en
+        # HTML estatico (mediana de inflacion 12/24m, ver
+        # src/etl/bcu_expectativas.py -- que la parsea directo, sin pasar
+        # por este descubrimiento generico). Va primera en la lista.
+        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx",
         # "subsitio.bcu.gub.uy" es un TERCER sitio (ni SharePoint clasico ni
         # el eportal Liferay), hallado el 3-sep-2026: parece la migracion
         # mas reciente de contenido de politica monetaria/expectativas.
         "https://subsitio.bcu.gub.uy/politica-monetaria/",
-        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx",
         "https://ganges.bcu.gub.uy:8443/eportal/web/guest/expectativas-economicas",
         "https://ganges.bcu.gub.uy:8443/eportal/web/guest/eee",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Expectativas-Economicas.aspx",

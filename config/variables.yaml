@@ -143,6 +143,30 @@ inflacion:
     modelo_destino: ambos
     prioridad: importante
 
+  - var_id: expectativas_inflacion_12m
+    nombre: "Mediana de expectativas de inflacion a 12 meses (Encuesta BCU)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx"
+    metodo_acceso: "HTML estatico (no requiere navegador headless -- confirmado 3-sep-2026, a diferencia de ITCR/TPM historica). Valor extraido de un bloque JSON embebido en un <script> del widget 'BCUSliderWebPart' (src/etl/bcu_expectativas.py). Solo el valor vigente al momento de la consulta, no la serie historica -- se construye hacia adelante corriendo el ETL mensual."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [nivel]
+    hipotesis_econ: "Ancla de expectativas para la curva de Phillips (forward-looking) y para evaluar si el ensemble se aleja de lo que esperan los analistas."
+    modelo_destino: inflacion
+    prioridad: importante
+
+  - var_id: expectativas_inflacion_24m
+    nombre: "Mediana de expectativas de inflacion a 24 meses (Encuesta BCU)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx"
+    metodo_acceso: "Igual que expectativas_inflacion_12m, mismo bloque JSON."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [nivel]
+    hipotesis_econ: "Horizonte de politica del BCU (el que mas le importa al Copom)."
+    modelo_destino: inflacion
+    prioridad: importante
+
 # ---------------------------------------------------------------------
 # BLOQUE B - OBJETIVO: TIPO DE CAMBIO
 # ---------------------------------------------------------------------

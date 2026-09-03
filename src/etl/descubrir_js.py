@@ -40,14 +40,15 @@ EXT_PLANILLA = (".xls", ".xlsx", ".csv", ".ods")
 
 # Las mismas paginas ya identificadas en descubrir_fuentes.py como
 # estructuralmente bloqueadas para requests.get(); aca se abren con un
-# navegador real.
-FUENTES_JS: dict[str, str] = {
-    "expectativas_bcu_js": "https://subsitio.bcu.gub.uy/politica-monetaria/",
-    "itcr_bcu_js": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre",
-    # IMAE: URL sin confirmar (ver descubrir_fuentes.py). Se prueba tambien
-    # aca por si vive en el mismo subsitio SPA que TPM/expectativas -- el
-    # candidato clasico .aspx de descubrir_fuentes.py cubre la otra hipotesis.
-    "imae_bcu_js": "https://subsitio.bcu.gub.uy/estadisticas/",
+# navegador real. `clic_texto`, si esta, es un texto visible a clickear
+# DESPUES del primer render -- para paginas SPA que enrutan por JS (sin
+# <a href> real) en vez de link estatico: confirmado el 3-sep-2026 que
+# subsitio.bcu.gub.uy/estadisticas/ es asi (el render trae el texto "IMAE"
+# en un blob de datos de la app, no un href navegable).
+FUENTES_JS: dict[str, dict] = {
+    "expectativas_bcu_js": {"url": "https://subsitio.bcu.gub.uy/politica-monetaria/"},
+    "itcr_bcu_js": {"url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"},
+    "imae_bcu_js": {"url": "https://subsitio.bcu.gub.uy/estadisticas/", "clic_texto": "IMAE"},
 }
 
 
@@ -56,8 +57,15 @@ def _nombre_seguro(url: str) -> str:
     return re.sub(r"[^\w.\-]", "_", nombre)[:120]
 
 
-def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000) -> dict:
-    """Renderiza `url` con Chromium headless y archiva HTML + planillas + tablas."""
+def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
+                 clic_texto: str | None = None) -> dict:
+    """Renderiza `url` con Chromium headless y archiva HTML + planillas + tablas.
+
+    Si `clic_texto` viene dado, despues del primer render busca un elemento
+    visible con ese texto y lo clickea (paginas SPA que enrutan por JS, sin
+    <a href> navegable) antes de archivar -- el archivo resultante es el de
+    la pagina DESTINO, no la de aterrizaje.
+    """
     from playwright.sync_api import sync_playwright  # import diferido: pesado, solo hace falta aca
 
     subdir = RAW / clave
@@ -76,6 +84,15 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000) -> dict:
 
         # margen extra para AJAX lento (el eportal Liferay es lento en frio)
         pagina.wait_for_timeout(3000)
+
+        if clic_texto:
+            try:
+                pagina.get_by_text(clic_texto, exact=False).first.click(timeout=timeout_ms)
+                pagina.wait_for_load_state("networkidle", timeout=timeout_ms)
+                pagina.wait_for_timeout(3000)
+            except Exception as e:                        # noqa: BLE001
+                print(f"[desc-js] {clave}: no se pudo clickear '{clic_texto}': {e}"
+                      f" -- se archiva la pagina de aterrizaje igual")
 
         html = pagina.content()
         destino_html = subdir / f"{dt.date.today():%Y%m%d}_render.html"
@@ -113,6 +130,15 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000) -> dict:
                 resumen["tablas"] += 1
         except ValueError:
             pass  # sin tablas parseables por pandas.read_html
+        except Exception as e:                            # noqa: BLE001
+            # una dependencia opcional de read_html (lxml/html5lib) puede
+            # faltar o fallar sobre HTML real mal formado -- no debe tirar
+            # abajo el archivado (que ya se guardo arriba). Real: en la
+            # primera corrida contra el BCU real, read_html sobre un HTML
+            # que lxml no pudo parsear intento el flavor html5lib, que no
+            # estaba instalado, y abortaba toda la funcion antes de cerrar
+            # el navegador.
+            print(f"[desc-js] {clave}: fallo extraccion de tablas: {e}")
 
         navegador.close()
 
@@ -124,9 +150,9 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000) -> dict:
 def descubrir_todo_js() -> list[dict]:
     RAW.mkdir(parents=True, exist_ok=True)
     resultados = []
-    for clave, url in FUENTES_JS.items():
+    for clave, cfg in FUENTES_JS.items():
         try:
-            resultados.append(_archivar_js(clave, url))
+            resultados.append(_archivar_js(clave, cfg["url"], clic_texto=cfg.get("clic_texto")))
         except Exception as e:                            # noqa: BLE001
             print(f"[desc-js] {clave}: fallo total: {e}")
             resultados.append({"clave": clave, "html": None, "planillas": 0, "tablas": 0})

@@ -238,6 +238,27 @@ else:
         check(fecha_ref is not None, f"fecha_ref derivada del nombre ({fecha_ref})")
 
 # ---------------------------------------------------------------------
+print("\n[9] Extraccion de expectativas de inflacion (HTML real del BCU)")
+from src.etl import bcu_expectativas  # noqa: E402
+
+EXPECT_DIR = (Path(__file__).resolve().parents[1] / "data" / "raw" /
+             "descubrimiento" / "expectativas_bcu")
+_archivos = list(EXPECT_DIR.glob("*Expectativas-de-los-agentes*")) if EXPECT_DIR.exists() else []
+if not _archivos:
+    print("  (sin pagina archivada; se salta la extraccion real)")
+else:
+    html = _archivos[-1].read_text(encoding="utf-8", errors="replace")
+    resultado = bcu_expectativas.parsear(html)
+    check(bool(resultado), "se extrajo el bloque de expectativas")
+    check("12" in resultado and "24" in resultado,
+         "horizontes 12m y 24m presentes")
+    if "12" in resultado:
+        check(0 < resultado["12"] < 30, f"mediana 12m en rango plausible ({resultado['12']}%)")
+    if "24" in resultado:
+        check(0 < resultado["24"] < 30, f"mediana 24m en rango plausible ({resultado['24']}%)")
+    check("mes_referencia" in resultado, f"mes_referencia derivado ({resultado.get('mes_referencia')})")
+
+# ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")
 for f in fallos:
     print("  -", f)

@@ -25,7 +25,7 @@ import pandas as pd
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.etl import bcu_cotizaciones, bcu_ipom, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
+from src.etl import bcu_cotizaciones, bcu_expectativas, bcu_ipom, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
 from src.etl import db, descubrir_fuentes, descubrir_js, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -240,6 +240,31 @@ def etl_tpm(con) -> int:
     return r["nuevas"]
 
 
+@paso("bcu_expectativas")
+def etl_expectativas(con) -> int:
+    """
+    Mediana de expectativas de inflacion a 12/24m, extraida de HTML
+    estatico (no requiere navegador -- ver docstring de bcu_expectativas.py).
+    Solo el valor vigente al momento de la consulta: la serie se construye
+    hacia adelante, un punto por corrida mensual.
+    """
+    resultado = bcu_expectativas.valor_vigente()
+    if not resultado:
+        raise RuntimeError("no se encontro el bloque de expectativas en la pagina del BCU")
+    mes_ref = resultado.get("mes_referencia", db.hoy())
+    total = 0
+    for horizonte, var_id in [("12", "expectativas_inflacion_12m"),
+                             ("24", "expectativas_inflacion_24m")]:
+        if horizonte not in resultado:
+            continue
+        r = db.upsert_observaciones(
+            con, var_id, [(mes_ref, resultado[horizonte])],
+            fuente="BCU, Expectativas de los agentes (encuesta a analistas)")
+        print(f"[etl] {var_id}: {resultado[horizonte]}% en {mes_ref} ({r})")
+        total += r["nuevas"]
+    return total
+
+
 @paso("descubrimiento_fuentes")
 def etl_descubrimiento(con) -> int:
     """
@@ -378,6 +403,7 @@ def main() -> None:
         if args.modo in ("mensual", "historico"):
             etl_ipc(con)
             etl_ims(con)
+            etl_expectativas(con)
             etl_descubrimiento(con)
             etl_descubrimiento_js(con)
             etl_tpm(con)

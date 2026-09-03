@@ -53,13 +53,19 @@
 
 ## Qué falta para que esto sea más robusto (ver también `manifest_fuentes.md`)
 
-Encuesta de Expectativas del BCU e ITCR: agregado el 3-sep-2026 un paso de descubrimiento con
-Chromium headless (`descubrir_fuentes_js`, vía Playwright) que renderiza esas páginas y archiva
-HTML/planillas/tablas — sin confirmar todavía contra las páginas reales (el sandbox de análisis no
-tiene salida a bcu.gub.uy). Revisar `data/raw/descubrimiento/expectativas_bcu_js/` e
-`itcr_bcu_js/` tras el primer ETL mensual que corra este paso, y calibrar los parsers si aparece
-algo útil. IMAE (brecha de producto) y la historia completa de la TPM: agregadas candidatas de URL
-sin confirmar (`imae_bcu`, `tpm_historica_bcu` en `descubrir_fuentes.py`); mismo chequeo pendiente.
-Exógenas por división para el SARIMAX bottom-up genuino: sin abordar, baja prioridad — la sesión 4
-no encontró ningún challenger que le ganara al benchmark top-down. Ninguno de estos es una tarea de
-modelado — todos son de ingesta de datos.
+**Resuelto el 3-sep-2026**: Expectativas de inflación del BCU (mediana 12/24m) — no hacía falta
+navegador, el dato está en HTML estático de una página que se creía bloqueada
+(`src/etl/bcu_expectativas.py`, nuevas variables `expectativas_inflacion_12m/24m`). Solo da el
+valor vigente en cada corrida, no la serie histórica completa — se construye hacia adelante.
+
+**Diagnosticado, no resuelto**: ITCR — confirmado con Chromium que el dato vive en un gráfico
+Ext JS sobre `<canvas>` con exportación solo vía un ícono clickeable (menú "Herramientas" → .xls).
+Automatizar ese click a ciegas, sin ver el render real, es demasiado frágil; queda para una
+iteración con capturas de pantalla. Mientras tanto, descarga manual (ver `manifest_fuentes.md`).
+
+**Sin resolver**: IMAE (brecha de producto) — localizado el link en `subsitio.bcu.gub.uy/estadisticas/`
+pero es ruteo SPA sin URL destino confirmada. TPM histórica completa (todas las reuniones del
+Copom, hoy solo un punto vía IPOM) — sin planilla encontrada todavía. Exógenas por división para
+el SARIMAX bottom-up genuino — sin abordar, baja prioridad (la sesión 4 no encontró ningún
+challenger que le ganara al benchmark top-down). Ninguno de estos es una tarea de modelado — todos
+son de ingesta de datos.
