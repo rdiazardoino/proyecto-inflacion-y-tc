@@ -45,10 +45,17 @@ EXT_PLANILLA = (".xls", ".xlsx", ".csv", ".ods")
 # saca sus servicios web de noche (connect timeout ~22:30 Montevideo del
 # 2-sep); correr el descubrimiento en horario habil de Uruguay.
 FUENTES: dict[str, list[str]] = {
+    # Las paginas .aspx del BCU son cascarones SharePoint: los datos viven
+    # en el eportal Liferay (ganges.bcu.gub.uy:8443), embebido por iframe
+    # (verificado en el HTML archivado del ITCR el 3-sep-2026).
     "expectativas_bcu": [
+        "https://ganges.bcu.gub.uy:8443/eportal/web/guest/expectativas-economicas",
+        "https://ganges.bcu.gub.uy:8443/eportal/web/guest/eee",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Expectativas-Economicas.aspx",
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Encuesta-de-Expectativas-Economicas.aspx",
     ],
     "itcr_bcu": [
+        "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tipo-de-cambio-real-efectivo.aspx",
     ],
     "tpm_bcu": [
@@ -115,8 +122,26 @@ def descubrir_fuente(clave: str, candidatas: list[str]) -> dict:
             break
 
         enlaces = [urljoin(url, a["href"]) for a in sopa.find_all("a", href=True)]
+        # Los .aspx del BCU embeben el contenido real (eportal Liferay) por
+        # iframe: se archiva tambien esa pagina y se suman sus enlaces.
+        for tag in sopa.find_all(["iframe", "embed"]):
+            src = tag.get("src")
+            if not src or "bcu.gub.uy" not in src:
+                continue
+            src = urljoin(url, src)
+            print(f"[desc] {clave}: iframe -> {src}")
+            ruta_if = _archivar(src, subdir)
+            if ruta_if:
+                try:
+                    sopa_if = BeautifulSoup(ruta_if.read_bytes(), "html.parser")
+                    enlaces += [urljoin(src, a["href"])
+                                for a in sopa_if.find_all("a", href=True)]
+                except Exception as e:                # noqa: BLE001
+                    print(f"[desc] iframe no parseable: {e}")
         planillas = [u for u in dict.fromkeys(enlaces)
-                     if u.lower().split("?")[0].endswith(EXT_PLANILLA)]
+                     if u.lower().split("?")[0].endswith(EXT_PLANILLA)
+                     # basura del menu global del sitio BCU
+                     and "/Servicios-Financieros-SSF/" not in u]
         interes = [u for u in dict.fromkeys(enlaces)
                    if PATRON_INTERES.search(unquote(u)) and u not in planillas]
         resumen["enlaces_interes"] = interes[:25]

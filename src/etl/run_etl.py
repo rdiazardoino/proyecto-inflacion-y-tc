@@ -25,7 +25,7 @@ import pandas as pd
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.etl import bcu_cotizaciones, fred_series, ine_ipc, licitaciones  # noqa: E402
+from src.etl import bcu_cotizaciones, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
 from src.etl import db, descubrir_fuentes, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -207,6 +207,21 @@ def etl_licitaciones(con) -> int:
     return n
 
 
+@paso("ine_ims")
+def etl_ims(con) -> int:
+    """IMS nominal (dic-2002+) e IMS general largo (1968+)."""
+    ine_ims.bajar()
+    resultado = ine_ims.series()
+    if not resultado:
+        raise RuntimeError("ninguna planilla del IMS pudo parsearse")
+    total = 0
+    fuentes = {"salario_nominal_ims": "INE IMSN base jul-2008=100",
+               "ims_general_idx": "INE IMS general base jul-2008=100 (desde 1968)"}
+    for var_id, s in resultado.items():
+        total += _upsert_serie(con, var_id, s, fuentes[var_id])
+    return total
+
+
 @paso("descubrimiento_fuentes")
 def etl_descubrimiento(con) -> int:
     """
@@ -325,6 +340,7 @@ def main() -> None:
             etl_licitaciones(con)
         if args.modo in ("mensual", "historico"):
             etl_ipc(con)
+            etl_ims(con)
             etl_descubrimiento(con)
 
         controles(con)

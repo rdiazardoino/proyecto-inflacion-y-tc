@@ -28,3 +28,4 @@ data/raw/**/*.pdf
 # de Actions (proxy bloquea *.blob.core.windows.net).
 !data/raw/ine/**
 !data/raw/descubrimiento/**
+!data/raw/ims/**

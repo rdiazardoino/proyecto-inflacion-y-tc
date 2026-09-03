@@ -195,6 +195,28 @@ else:
         check(abs(n.loc["2022-10-01"] - 100) < 1e-6, "IPC-CE ancla 100 en oct-2022")
 
 # ---------------------------------------------------------------------
+print("\n[7] Parser del IMS contra las planillas reales")
+from src.etl import ine_ims  # noqa: E402
+IMS_DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / "descubrimiento" / "ims_ine"
+if not IMS_DIR.exists() or not any(IMS_DIR.iterdir()):
+    print("  (sin planillas del IMS; se salta)")
+else:
+    res = ine_ims.series(IMS_DIR)
+    check("salario_nominal_ims" in res, "IMSN encontrado y parseado")
+    check("ims_general_idx" in res, "IMS general encontrado y parseado")
+    if "salario_nominal_ims" in res:
+        s = res["salario_nominal_ims"]
+        check(s.index.min() == pd.Timestamp("2002-12-01"),
+              f"IMSN arranca dic-2002 (da {s.index.min().date()})")
+        check(len(s) >= 280, f"IMSN con {len(s)} obs")
+        vm = s.pct_change().dropna() * 100
+        check(vm.between(-2, 20).all(), "variaciones mensuales del IMSN plausibles")
+    if "ims_general_idx" in res:
+        g = res["ims_general_idx"]
+        check(g.index.min().year == 1968, f"IMS general arranca 1968 (da {g.index.min().date()})")
+        check((g > 0).all(), "IMS general sin ceros ni negativos")
+
+# ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")
 for f in fallos:
     print("  -", f)
