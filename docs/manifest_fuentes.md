@@ -64,7 +64,27 @@ descubrimiento debe correr en horario hábil de Uruguay.
 |---|---|---|
 | Encuesta de Expectativas BCU (inflación 12/24m, TC) | bloqueado (SPA) | **descarga manual**: abrir [Política Monetaria — BCU](https://subsitio.bcu.gub.uy/politica-monetaria/), exportar la encuesta, subir el archivo a `data/raw/descubrimiento/expectativas_bcu/` |
 | ITCR global/bilaterales | bloqueado (portal Liferay) | **descarga manual**: abrir [`/eportal/web/guest/tcre`](https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre), exportar la serie, subir a `data/raw/descubrimiento/itcr_bcu/` |
-| TPM (decisiones Copom; hoy 5,75%) | bloqueado (SPA) | extraer del [Informe de Política Monetaria](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf) (PDF trimestral con la serie en anexo, sí descargable) |
+| TPM (decisiones Copom) | **resuelto parcialmente** — ver abajo | [IPOM](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf) (trimestral, sí es PDF estático) |
+
+### TPM: extracción del IPOM (resuelta con una limitación documentada)
+
+El Informe de Política Monetaria (IPOM, trimestral) sí es un PDF estático
+descargable — a diferencia de ITCR y Expectativas, no requiere JavaScript.
+`src/etl/bcu_ipom.py` extrae por regex la frase del Resumen Ejecutivo
+("...resolvió mantener la Tasa de Política Monetaria (TPM) en 5,75%...") y la
+carga como observación de `tpm_bcu`. Verificado contra el IPOM real del
+1T-2026: extrae **5,75%** correctamente.
+
+**Limitación honesta:** el IPOM no siempre da la fecha exacta de la reunión
+del Copom, así que `fecha_ref` es el primer mes del trimestre que cubre el
+informe (deducido del nombre `IPOM_{año}-{trimestre}.pdf`), no la fecha real
+de la decisión. Además solo da el valor *vigente al momento del informe*: la
+serie queda con un punto por trimestre (cuando se archive el próximo IPOM),
+no la serie mensual completa de todas las reuniones del Copom — para eso
+haría falta parsear los comunicados individuales de cada reunión (~8/año),
+que si están en el dominio clásico como PDFs sueltos (`/Acerca-de-BCU/...ACTA
+*COPOM.pdf`, confirmado que existe al menos uno por búsqueda web) — pendiente
+para una iteración futura si se necesita mayor frecuencia.
 | Combustibles (precios de venta al público) | página encontrada, sin planillas enlazadas | [URSEA — precios de referencia y PMIT](https://www.gub.uy/unidad-reguladora-servicios-energia-agua/comunicacion/publicaciones/precios-venta-publico-referencia-para-gasolinas-gasoil-50-s-pmit-2) | revisar si la tabla está en el cuerpo de la página (HTML) en vez de un archivo adjunto |
 | Tarifas UTE/OSE/Antel | sin explorar | [INE — precios de servicios públicos](https://www.ine.gub.uy/precios-de-servicios-publicos); decretos de Presidencia | tabla `eventos` con Δ% ponderado |
 | Licitaciones LRM/Notas del Tesoro | crudos archivados, parser sin calibrar | BCU Operaciones Monetarias / UGD (`data/raw/licitaciones/`) | calibrar `PATRONES` |

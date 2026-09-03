@@ -217,6 +217,27 @@ else:
         check((g > 0).all(), "IMS general sin ceros ni negativos")
 
 # ---------------------------------------------------------------------
+print("\n[8] Extraccion de la TPM del IPOM (PDF real)")
+from src.etl import bcu_ipom  # noqa: E402
+check(bcu_ipom.fecha_ref_de_nombre("IPOM_2026-1.pdf") == "2026-01-01",
+      "fecha_ref de 'IPOM_2026-1.pdf' -> 2026-01-01")
+check(bcu_ipom.fecha_ref_de_nombre("IPOM_2025-4.pdf") == "2025-10-01",
+      "fecha_ref de 'IPOM_2025-4.pdf' -> 2025-10-01")
+check(bcu_ipom.fecha_ref_de_nombre("otra_cosa.pdf") is None,
+      "nombre sin patron IPOM -> None")
+
+IPOM_DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / "descubrimiento" / "tpm_bcu"
+if not IPOM_DIR.exists() or not list(IPOM_DIR.glob("*IPOM*.pdf")):
+    print("  (sin IPOM archivado; se salta la extraccion real)")
+else:
+    resultado = bcu_ipom.valor_vigente(IPOM_DIR)
+    check(resultado is not None, "se extrajo un valor de TPM del IPOM real")
+    if resultado:
+        fecha_ref, valor, ruta = resultado
+        check(0 < valor < 30, f"TPM en rango plausible (dio {valor}%)")
+        check(fecha_ref is not None, f"fecha_ref derivada del nombre ({fecha_ref})")
+
+# ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")
 for f in fallos:
     print("  -", f)

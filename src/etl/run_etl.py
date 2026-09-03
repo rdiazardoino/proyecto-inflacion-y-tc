@@ -25,7 +25,7 @@ import pandas as pd
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.etl import bcu_cotizaciones, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
+from src.etl import bcu_cotizaciones, bcu_ipom, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
 from src.etl import db, descubrir_fuentes, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -222,6 +222,24 @@ def etl_ims(con) -> int:
     return total
 
 
+@paso("bcu_tpm_ipom")
+def etl_tpm(con) -> int:
+    """
+    TPM vigente extraida del ultimo IPOM archivado por el paso de
+    descubrimiento. No es una serie mensual real (ver docstring de
+    bcu_ipom.py): un punto por trimestre, con fecha_ref aproximada.
+    """
+    resultado = bcu_ipom.valor_vigente()
+    if resultado is None:
+        raise RuntimeError("no se encontro TPM parseable en ningun IPOM archivado")
+    fecha_ref, valor, ruta = resultado
+    r = db.upsert_observaciones(
+        con, "tpm_bcu", [(fecha_ref, valor)],
+        fuente=f"BCU IPOM ({ruta.name}), extraccion de texto del Resumen Ejecutivo")
+    print(f"[etl] tpm_bcu: {valor}% en {fecha_ref} ({r})")
+    return r["nuevas"]
+
+
 @paso("descubrimiento_fuentes")
 def etl_descubrimiento(con) -> int:
     """
@@ -342,6 +360,7 @@ def main() -> None:
             etl_ipc(con)
             etl_ims(con)
             etl_descubrimiento(con)
+            etl_tpm(con)
 
         controles(con)
         resumen(con)
