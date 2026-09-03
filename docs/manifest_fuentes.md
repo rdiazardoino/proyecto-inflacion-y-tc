@@ -31,16 +31,21 @@ Notas de cobertura:
 
 ## Pendiente de ingesta (siguiente iteración de datos)
 
-Prioridad A del plan aún sin ingestor automático:
+Prioridad A del plan aún sin ingestor automático. URLs verificadas el 3-sep-2026
+(cargadas en `src/etl/descubrir_fuentes.py`, que las archiva en cada corrida
+mensual). **Nota operativa: el BCU apaga sus servicios web de noche** (connect
+timeout a las ~22:30 de Montevideo); el descubrimiento debe correr en horario
+hábil de Uruguay.
 
-| Serie | Fuente | Plan |
+| Serie | Dónde se obtiene | Plan |
 |---|---|---|
-| Encuesta de Expectativas Económicas BCU (inflación 12/24m, TC) | BCU (XLS mensual) | ingestor nuevo; el fix SSL ya destraba el host |
-| ITCR global/bilaterales | BCU (XLS mensual) | ídem |
-| TPM (decisiones Copom) | BCU (evento) | tabla de eventos + serie escalonada |
-| IMS (Índice Medio de Salarios) | INE (XLS mensual) | mismo patrón que IPC |
-| Combustibles ANCAP / tarifas UTE-OSE-Antel | ANCAP/Presidencia (evento) | tabla `eventos` con Δ% ponderado |
-| Licitaciones LRM/Notas del Tesoro | BCU/UGD | calibrar `PATRONES` con los HTML/PDF ya archivados en `data/raw/licitaciones/` |
+| Encuesta de Expectativas BCU (inflación 12/24m, TC fin de año) | [Expectativas Económicas](https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Expectativas-Economicas.aspx) — planillas `iees*` en `/Estadisticas-e-Indicadores/Encuesta de Expectativas Econmicas/` | ingestor tras calibrar con el XLS real |
+| ITCR global/bilaterales | [Tipo de cambio real efectivo](https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tipo-de-cambio-real-efectivo.aspx) | ídem |
+| TPM (decisiones Copom; hoy 5,75%) | [Política Económica y Mercados](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/default.aspx) — comunicados Copom e IPOM | tabla de eventos + serie escalonada |
+| IMS (Índice Medio de Salarios) | [Series históricas IMS base jul-2008](https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-indice-medio-salarios-ims-base-julio-2008100) | mismo patrón que el IPC |
+| Combustibles (precios de venta al público) | [URSEA — precios de referencia y PMIT](https://www.gub.uy/unidad-reguladora-servicios-energia-agua/comunicacion/publicaciones/precios-venta-publico-referencia-para-gasolinas-gasoil-50-s-pmit-2); decretos MIEM | tabla `eventos` con Δ% |
+| Tarifas UTE/OSE/Antel | [INE — precios de servicios públicos](https://www.ine.gub.uy/precios-de-servicios-publicos); decretos | tabla `eventos` con Δ% ponderado |
+| Licitaciones LRM/Notas del Tesoro | BCU Operaciones Monetarias / UGD (crudos ya en `data/raw/licitaciones/`) | calibrar `PATRONES` |
 
 Con lo cargado alcanza para arrancar la sesión 2 (EDA: estacionalidad por división,
 correlaciones TC→componentes, quiebres, pass-through preliminar).

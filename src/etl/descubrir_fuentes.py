@@ -41,28 +41,31 @@ MAX_BYTES = 15_000_000
 
 EXT_PLANILLA = (".xls", ".xlsx", ".csv", ".ods")
 
+# URLs verificadas por busqueda web el 3-sep-2026. Nota operativa: el BCU
+# saca sus servicios web de noche (connect timeout ~22:30 Montevideo del
+# 2-sep); correr el descubrimiento en horario habil de Uruguay.
 FUENTES: dict[str, list[str]] = {
     "expectativas_bcu": [
-        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Encuesta-de-Expectativas-Economicas.aspx",
-        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Encuesta-de-Expectativas-Economicas/Paginas/default.aspx",
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Expectativas-Economicas.aspx",
     ],
     "itcr_bcu": [
-        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tipo-de-Cambio-Real-Efectivo.aspx",
-        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Indice-Tipo-de-Cambio-Real.aspx",
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tipo-de-cambio-real-efectivo.aspx",
     ],
     "tpm_bcu": [
-        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Gestion-de-la-Politica-Monetaria-en-el-marco-del-Comite-de-Politica-Monetaria.aspx",
-        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Comite-de-Politica-Monetaria.aspx",
+        # la TPM se anuncia por comunicado del Copom; estas paginas enlazan
+        # los comunicados y el IPOM (que trae la serie)
         "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/default.aspx",
+        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Comite-de-Politica-Monetaria.aspx",
     ],
     "ims_ine": [
-        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/indice-medio-salarios-0",
-        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/indice-medio-salarios",
-        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/serie-historica-indice-medio-salarios",
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-indice-medio-salarios-ims-base-julio-2008100",
+        "https://www.ine.gub.uy/ims-indice-medio-de-salarios",
+        "https://www3.ine.gub.uy/rraa/ims.html",
     ],
     "combustibles_miem": [
-        "https://www.gub.uy/ministerio-industria-energia-mineria/politicas-y-gestion/precios-combustibles",
-        "https://www.gub.uy/ministerio-industria-energia-mineria/tematica/precios-de-combustibles",
+        "https://www.gub.uy/unidad-reguladora-servicios-energia-agua/comunicacion/publicaciones/precios-venta-publico-referencia-para-gasolinas-gasoil-50-s-pmit-2",
+        "https://www.gub.uy/ministerio-industria-energia-mineria/tematica/tarifas",
+        "https://www.ine.gub.uy/precios-de-servicios-publicos",
     ],
 }
 
