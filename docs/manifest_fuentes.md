@@ -62,9 +62,40 @@ descubrimiento debe correr en horario hábil de Uruguay.
 
 | Serie | Estado | Alternativa mientras tanto |
 |---|---|---|
-| Encuesta de Expectativas BCU (inflación 12/24m, TC) | bloqueado (SPA) | **descarga manual**: abrir [Política Monetaria — BCU](https://subsitio.bcu.gub.uy/politica-monetaria/), exportar la encuesta, subir el archivo a `data/raw/descubrimiento/expectativas_bcu/` |
-| ITCR global/bilaterales | bloqueado (portal Liferay) | **descarga manual**: abrir [`/eportal/web/guest/tcre`](https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre), exportar la serie, subir a `data/raw/descubrimiento/itcr_bcu/` |
+| Encuesta de Expectativas BCU (inflación 12/24m, TC) | **en prueba** — ver "Descubrimiento con Chromium" abajo | **descarga manual**: abrir [Política Monetaria — BCU](https://subsitio.bcu.gub.uy/politica-monetaria/), exportar la encuesta, subir el archivo a `data/raw/descubrimiento/expectativas_bcu/` |
+| ITCR global/bilaterales | **en prueba** — ver "Descubrimiento con Chromium" abajo | **descarga manual**: abrir [`/eportal/web/guest/tcre`](https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre), exportar la serie, subir a `data/raw/descubrimiento/itcr_bcu/` |
 | TPM (decisiones Copom) | **resuelto parcialmente** — ver abajo | [IPOM](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf) (trimestral, sí es PDF estático) |
+| TPM histórica completa (todas las reuniones del Copom) | sin ingestor; candidatas de URL sin confirmar en `descubrir_fuentes.py` (`tpm_historica_bcu`) | pendiente de lo que archive el próximo ETL mensual |
+| IMAE (brecha de producto) | sin ingestor; candidatas de URL sin confirmar en `descubrir_fuentes.py` (`imae_bcu`) y `descubrir_js.py` (`imae_bcu_js`) | pendiente de lo que archive el próximo ETL mensual |
+
+### Descubrimiento con Chromium (Playwright) — agregado 3-sep-2026
+
+`src/etl/descubrir_js.py`, corre en el paso `descubrimiento_fuentes_js` del ETL
+mensual. Mismo propósito que `descubrir_fuentes.py` pero con un navegador
+real (Chromium headless, instalado en el workflow con
+`playwright install --with-deps chromium`): renderiza la página, espera a
+que termine el tráfico de red (`wait_until="networkidle"` + 3s de margen
+para AJAX lento), y archiva el HTML ya renderizado, cualquier planilla que
+solo aparece en el DOM post-render, y las tablas HTML visibles (volcadas a
+CSV — frecuente que el portal Liferay muestre el dato en una tabla en vez
+de una planilla descargable).
+
+**No se pudo probar contra las páginas reales de BCU** (el sandbox de
+análisis no tiene salida a `bcu.gub.uy`, solo GitHub Actions la tiene). Se
+validó la mecánica contra una página de prueba local servida en el propio
+sandbox — confirmado que Playwright funciona en este entorno, que captura
+correctamente contenido inyectado por `setTimeout`, descarga el archivo
+enlazado post-render, y extrae la tabla a CSV. La calibración real (¿la URL
+de `subsitio.bcu.gub.uy/politica-monetaria/` sigue siendo válida?, ¿el
+`eportal` de `itcr_bcu_js` responde fuera de horario hábil de Uruguay?, ¿qué
+forma tiene el HTML/tabla real?) se hace la primera vez que el ETL mensual
+corra este paso y archive algo real en `data/raw/descubrimiento/*_js/`.
+
+Bug real encontrado durante esa prueba local, antes de commitear: en pandas
+≥2.1 (proyecto en 3.0.5), `pd.read_html()` dejó de aceptar un string HTML
+literal — lo interpreta como ruta de archivo o URL y tira
+`FileNotFoundError` con el HTML entero como "nombre de archivo". Corregido
+envolviendo el string en `io.StringIO()`.
 
 ### TPM: extracción del IPOM (resuelta con una limitación documentada)
 

@@ -53,6 +53,13 @@
 
 ## Qué falta para que esto sea más robusto (ver también `manifest_fuentes.md`)
 
-Encuesta de Expectativas del BCU e ITCR (bloqueados, requieren navegador headless), IMAE (brecha de
-producto, sin ingestor todavía), historia completa de la TPM (solo un punto), exógenas por división
-para el SARIMAX bottom-up genuino. Ninguno es una tarea de modelado — todos son de ingesta de datos.
+Encuesta de Expectativas del BCU e ITCR: agregado el 3-sep-2026 un paso de descubrimiento con
+Chromium headless (`descubrir_fuentes_js`, vía Playwright) que renderiza esas páginas y archiva
+HTML/planillas/tablas — sin confirmar todavía contra las páginas reales (el sandbox de análisis no
+tiene salida a bcu.gub.uy). Revisar `data/raw/descubrimiento/expectativas_bcu_js/` e
+`itcr_bcu_js/` tras el primer ETL mensual que corra este paso, y calibrar los parsers si aparece
+algo útil. IMAE (brecha de producto) y la historia completa de la TPM: agregadas candidatas de URL
+sin confirmar (`imae_bcu`, `tpm_historica_bcu` en `descubrir_fuentes.py`); mismo chequeo pendiente.
+Exógenas por división para el SARIMAX bottom-up genuino: sin abordar, baja prioridad — la sesión 4
+no encontró ningún challenger que le ganara al benchmark top-down. Ninguno de estos es una tarea de
+modelado — todos son de ingesta de datos.

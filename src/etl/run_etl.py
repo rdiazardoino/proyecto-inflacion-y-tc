@@ -26,7 +26,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.etl import bcu_cotizaciones, bcu_ipom, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
-from src.etl import db, descubrir_fuentes, seed  # noqa: E402
+from src.etl import db, descubrir_fuentes, descubrir_js, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 PROC = ROOT / "data" / "processed"
@@ -258,6 +258,25 @@ def etl_descubrimiento(con) -> int:
     return total
 
 
+@paso("descubrimiento_fuentes_js")
+def etl_descubrimiento_js(con) -> int:
+    """
+    Igual que etl_descubrimiento pero con Chromium headless (Playwright)
+    para expectativas_bcu_js e itcr_bcu_js: confirmado (ver
+    docs/manifest_fuentes.md) que esas paginas solo muestran el dato
+    despues de ejecutar JavaScript -- requests.get() nunca lo va a ver.
+    """
+    resumenes = descubrir_js.descubrir_todo_js()
+    total = 0
+    for r in resumenes:
+        if r["html"] is None:
+            db.alerta(con, "estructura", "warning",
+                      f"Descubrimiento JS de {r['clave']}: no se pudo renderizar "
+                      f"la pagina. Revisar la URL en descubrir_js.py.")
+        total += r["planillas"] + r["tablas"]
+    return total
+
+
 # ---------------------------------------------------------------------
 def controles(con) -> None:
     """Chequeos de frescura y de rango. Alertan, no abortan."""
@@ -360,6 +379,7 @@ def main() -> None:
             etl_ipc(con)
             etl_ims(con)
             etl_descubrimiento(con)
+            etl_descubrimiento_js(con)
             etl_tpm(con)
 
         controles(con)

@@ -16,6 +16,16 @@ Fuentes y donde viven:
                     politica monetaria y comunicados del Copom.
   ims_ine           Indice Medio de Salarios del INE (planillas como el IPC).
   combustibles_miem Precios de combustibles (MIEM/ANCAP), por evento.
+  imae_bcu          Indicador Mensual de Actividad Economica (BCU): proxy de
+                    brecha de producto para la curva de Phillips (v2, ver
+                    config/variables.yaml). URL sin confirmar todavia --
+                    candidatas por analogia con el resto de Estadisticas e
+                    Indicadores; se calibra contra lo que se archive.
+  tpm_historica_bcu Serie completa de TPM (todas las decisiones del Copom,
+                    no solo la vigente al cierre del ultimo IPOM -- ver
+                    bcu_ipom.py para esa limitacion). Candidatas sin
+                    confirmar; si el BCU publica una planilla historica en
+                    vez de solo comunicados sueltos, esto la encuentra.
 
 Cada clave lista URLs candidatas (los sitios .gub.uy reorganizan sin
 redirect). Se archiva el HTML de la primera que responda y hasta
@@ -84,6 +94,17 @@ FUENTES: dict[str, list[str]] = {
         "https://www.gub.uy/unidad-reguladora-servicios-energia-agua/comunicacion/publicaciones/precios-venta-publico-referencia-para-gasolinas-gasoil-50-s-pmit-2",
         "https://www.gub.uy/ministerio-industria-energia-mineria/tematica/tarifas",
         "https://www.ine.gub.uy/precios-de-servicios-publicos",
+    ],
+    "imae_bcu": [
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Indicador-Actividad-Economica.aspx",
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/IMAE.aspx",
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Cuentas-Nacionales.aspx",
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/default.aspx",
+    ],
+    "tpm_historica_bcu": [
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tasa-de-Politica-Monetaria.aspx",
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Mercado-de-Dinero.aspx",
+        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Comite-de-Politica-Monetaria.aspx",
     ],
 }
 
