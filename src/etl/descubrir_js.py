@@ -53,7 +53,14 @@ EXT_PLANILLA = (".xls", ".xlsx", ".csv", ".ods")
 # en un blob de datos de la app, no un href navegable).
 FUENTES_JS: dict[str, dict] = {
     "expectativas_bcu_js": {"url": "https://subsitio.bcu.gub.uy/politica-monetaria/"},
-    "itcr_bcu_js": {"url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"},
+    # confirmado por screenshot real el 4-sep-2026: el grafico SI trae la
+    # serie (TCRE Global/Extrarregional/Regional), pero el icono de
+    # exportar es un dibujo sobre <canvas> sin hook de DOM -- coordenadas
+    # calibradas contra ese screenshot (esquina superior izquierda del
+    # primer grafico). Paso 1: solo confirmar que el click abre un menu
+    # real (DOM) antes de intentar navegar el submenu "Herramientas".
+    "itcr_bcu_js": {"url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre",
+                    "clic_coordenadas": (478, 160)},
     "imae_bcu_js": {"url": "https://subsitio.bcu.gub.uy/estadisticas/", "clic_texto": "IMAE"},
 }
 
@@ -64,13 +71,23 @@ def _nombre_seguro(url: str) -> str:
 
 
 def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
-                 clic_texto: str | None = None) -> dict:
+                 clic_texto: str | None = None,
+                 clic_coordenadas: tuple[int, int] | None = None) -> dict:
     """Renderiza `url` con Chromium headless y archiva HTML + planillas + tablas.
 
     Si `clic_texto` viene dado, despues del primer render busca un elemento
     visible con ese texto y lo clickea (paginas SPA que enrutan por JS, sin
     <a href> navegable) antes de archivar -- el archivo resultante es el de
     la pagina DESTINO, no la de aterrizaje.
+
+    Si `clic_coordenadas` viene dado (x, y en pixeles de viewport), hace un
+    click ahi DESPUES de archivar el estado inicial, y archiva un segundo
+    screenshot + mapa de clickeables con el sufijo "_post_click" -- para
+    iconos dibujados sobre <canvas> sin ningun hook de DOM (ver ITCR en
+    manifest_fuentes.md: el icono de "Herramientas" del grafico Ext JS no
+    aparece en el mapa de clickeables porque no es un <a>/<button> real,
+    asi que la unica forma de activarlo es un click por coordenadas
+    calibradas visualmente contra un screenshot real).
     """
     from playwright.sync_api import sync_playwright  # import diferido: pesado, solo hace falta aca
 
@@ -133,6 +150,33 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
         except Exception as e:                            # noqa: BLE001
             print(f"[desc-js] {clave}: fallo mapa de clickeables: {e}")
 
+        if clic_coordenadas:
+            try:
+                x, y = clic_coordenadas
+                pagina.mouse.click(x, y)
+                pagina.wait_for_timeout(1500)
+                destino_png2 = subdir / f"{dt.date.today():%Y%m%d}_screenshot_post_click.png"
+                pagina.screenshot(path=str(destino_png2), full_page=True, timeout=timeout_ms)
+                clickeables2 = pagina.eval_on_selector_all(
+                    "a, button, [role=button], [onclick], [title], [aria-label], li, div",
+                    """els => els.filter(e => {
+                        const r = e.getBoundingClientRect();
+                        return r.width > 0 && r.height > 0 && r.width < 400 && r.height < 60;
+                    }).map(e => {
+                        const r = e.getBoundingClientRect();
+                        return {tag: e.tagName, texto: (e.innerText || e.getAttribute('title') ||
+                                e.getAttribute('aria-label') || '').trim().slice(0, 80),
+                                x: Math.round(r.x), y: Math.round(r.y),
+                                w: Math.round(r.width), h: Math.round(r.height)};
+                    }).filter(e => e.texto)""")
+                destino_json2 = subdir / f"{dt.date.today():%Y%m%d}_clickeables_post_click.json"
+                destino_json2.write_text(json.dumps(clickeables2, ensure_ascii=False, indent=1),
+                                         encoding="utf-8")
+                print(f"[desc-js] {clave}: click en ({x},{y}) -- "
+                      f"{len(clickeables2)} elementos chicos visibles despues")
+            except Exception as e:                        # noqa: BLE001
+                print(f"[desc-js] {clave}: fallo click en coordenadas {clic_coordenadas}: {e}")
+
         # enlaces a planillas visibles DESPUES del render -- antes del JS
         # estos <a> no existen en el DOM, por eso requests.get() no los ve.
         enlaces = pagina.eval_on_selector_all("a[href]", "els => els.map(e => e.href)")
@@ -186,7 +230,8 @@ def descubrir_todo_js() -> list[dict]:
     resultados = []
     for clave, cfg in FUENTES_JS.items():
         try:
-            resultados.append(_archivar_js(clave, cfg["url"], clic_texto=cfg.get("clic_texto")))
+            resultados.append(_archivar_js(clave, cfg["url"], clic_texto=cfg.get("clic_texto"),
+                                           clic_coordenadas=cfg.get("clic_coordenadas")))
         except Exception as e:                            # noqa: BLE001
             print(f"[desc-js] {clave}: fallo total: {e}")
             resultados.append({"clave": clave, "html": None, "planillas": 0, "tablas": 0})

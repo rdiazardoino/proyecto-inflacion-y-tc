@@ -100,9 +100,12 @@ FUENTES: dict[str, list[str]] = {
         "https://www.ine.gub.uy/precios-de-servicios-publicos",
     ],
     "imae_bcu": [
-        # CONFIRMADO 3-sep-2026: encontrado como <a href> real (no SPA) al
-        # archivar el candidato generico "default.aspx" -- el enlace de
-        # "Indicador Mensual de Actividad Economica" apunta aca.
+        # CONFIRMADO 4-sep-2026: encontrado como <a href> real (no SPA)
+        # dentro de Cuentas-Nacionales-e-Internacionales.aspx (que a su vez
+        # se encontro el 3-sep-2026 desde "default.aspx") -- el bloque
+        # "Indicador Mensual de Actividad Economica" -> "Informe y datos
+        # mensuales" apunta exactamente aca.
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Informe-del-Indicador-Mensual-de-Actividad-Economica-(IMAE).aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Cuentas-Nacionales-e-Internacionales.aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Indicador-Actividad-Economica.aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/IMAE.aspx",
