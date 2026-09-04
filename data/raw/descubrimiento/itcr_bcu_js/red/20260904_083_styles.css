@@ -1,117 +1,657 @@
-.reindeer .v-buttongroup {
-	border: 0;
+@import "../o3-vaadin-theme/styles.css";
+@import "../o3-vaadin-search-theme/styles.css";
+
+/******************************** ESTILOS PARA EDITOR *********************************/
+
+.o3-edit-control .o3-mode-button-active {
+    border: thin solid #4b4b4b;
+    border-color: #4b4b4b;
+    background-color: #4b4b4b;
+    background-image: none;
 }
 
-.reindeer .v-buttongroup .v-button {
-	height: 25px;
+.o3-edit-control .v-layout.v-horizontal.v-widget {
+    white-space: inherit;
 }
 
-.reindeer .v-buttongroup .v-button-left .v-button-wrap {
-	padding: 4px 6px 0 3px;
+.aui .v-app .o3-theme .v-button.v-button-link,
+.aui .v-app .o3-theme .v-button .v-button-link .v-button-wrap {
+    color: #3572b0;
+    background: #FFFFFF;
+    border: none;
 }
 
-.reindeer .v-buttongroup .v-button-middle .v-button-wrap {
-	padding: 4px 6px 0 6px;
+.o3-theme .o3-editor-element-settings-root {
+    white-space: normal!important;
 }
 
-.reindeer .v-buttongroup .v-button-right .v-button-wrap {
-	padding: 4px 9px 0 6px;
+.o3-theme .o3-editor-search-container {
+    padding: 5px;
 }
 
-.reindeer .v-buttongroup .v-button-left .v-button-wrap,
-.reindeer .v-buttongroup .v-button-middle .v-button-wrap,
-.reindeer .v-buttongroup .v-button-left.v-disabled .v-button-wrap,
-.reindeer .v-buttongroup .v-button-middle.v-disabled .v-button-wrap,
-.reindeer .v-buttongroup .v-button-left.v-disabled:active .v-button-wrap,
-.reindeer .v-buttongroup .v-button-middle.v-disabled:active .v-button-wrap,
-.reindeer .v-buttongroup .v-button-left.v-disabled:focus .v-button-wrap,
-.reindeer .v-buttongroup .v-button-middle.v-disabled:focus .v-button-wrap {
-	background-position: left -130px;
+.o3-editor-colselector-root .v-caption-o3-editor-colselector-left-table .v-captiontext,
+.o3-editor-colselector-root .v-caption-o3-editor-colselector-right-table .v-captiontext {
+    margin-bottom: 7px !important;
 }
 
-.reindeer .v-buttongroup .v-button-middle,
-.reindeer .v-buttongroup .v-button-middle.v-disabled:active,
-.reindeer .v-buttongroup .v-button-middle.v-disabled:focus {
-	border-left: 1px solid #ccc;
-	background-position: 5px -104px;
-	padding: 0;
+.o3-edit-control-tabmanager .v-tabsheet-deco {
+    height: 0px;
 }
 
-.reindeer .v-buttongroup .v-button-right {
-	border-left: 1px solid #ccc;
-	padding: 0;
-	background-image: none;
+.v-app .o3-theme .o3-edit-control .o3-editor-save-button {
+    border: none;
+    z-index: 5;
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 2px 1px 1px -85px;
+    width: 83px;
+    height: 29px;
+    border-radius: 0px!important;
+    line-height: 0px;
+    padding: 4px 15px 2px 15px;
+    box-shadow: none!important;
+    background: white;
 }
 
-.reindeer .v-buttongroup .v-button-left:focus .v-button-wrap {
-	background-position: left -26px;
+.o3-edit-control .o3-selector-style .v-button {
+    margin-bottom: 5px;
+    float: left;
 }
 
-.reindeer .v-buttongroup .v-button-middle:focus,
-.reindeer .v-buttongroup .v-button-middle:focus .v-button-wrap {
-	background-position: left -26px;
+.o3-edit-control .v-textfield {
+	width: 100%;
 }
 
-.reindeer .v-buttongroup .v-button-left:active .v-button-wrap,
-.reindeer .v-buttongroup .v-button-left.v-pressed .v-button-wrap,
-.reindeer .v-buttongroup .v-button-middle:active .v-button-wrap,
-.reindeer .v-buttongroup .v-button-middle.v-pressed .v-button-wrap {
-	background-position: left -78px;
+.o3-edit-control .v-filterselect-input {
+    width: 100% !important;
+}
+
+.o3-edit-control .o3-editor-element-settings-dimension-config-root {
+    margin-top: 50px;
+    margin-left: 10px;
+    border: 1px solid #E2E3E3;
+}
+
+.o3-edit-control .o3-edit-control-tabAdvanced {
+    padding: 3px;
+}
+
+.o3-edit-control .o3-editor-dimension-config {
+    float: right;
+    display: inline;
+    width: initial !important;
+    margin-right: 10px;
+    text-align: right;
+}
+
+.o3-edit-control .o3-editor-dimension-config-labels {
+    text-align: right;
+    margin-top: 5px;
+}
+
+.o3-edit-control .o3-editor-main-label-align .v-select-option {
+    display: inline;
+}
+
+.aui .v-app .o3-edit-control .v-button.o3-editor-element-settings-dimension-explorer-input-button {
+    height: initial ;
+    border: none;
+    box-shadow: none;
+    margin-left: 2px;
+}
+.o3-edit-control .o3-editor-element-settings-dimension-explorer-input-button:hover.ids-vaadin-icon-indent-right::before {
+    color: white;
+}
+
+.o3-edit-control .v-button.o3-editor-element-settings-dimension-explorer-input-button.ids-vaadin-icon-indent-right::before {
+    font-size: 15px;
+    line-height: 24px;
+}
+
+.o3-edit-control .o3-editor-element-settings-dimension-explorer-input-button .v-button-wrap {
+    display: none;
+}
+
+.o3-edit-control .o3-advanced-editor-tecno-chooser-label {
+    margin-top: 15px;
+}
+
+.o3-edit-control .o3-editor-input-field-inc,
+.o3-edit-control .o3-editor-input-field-dec {
+    height: 22px;
+    margin-left: 3px;
+}
+
+.o3-edit-control .o3-editor-input-field-inc .v-button-caption,
+.o3-edit-control .o3-editor-input-field-dec .v-button-caption,
+.o3-edit-control .o3-editor-input-field-inc .v-button-caption,
+.o3-edit-control .o3-editor-input-field-dec .v-button-caption {
+    line-height: 0px !important;
 }
 
 
-.runo .v-buttongroup {
-	border: 0;
-}
-
-.runo .v-buttongroup .v-button {
-	padding: 0;
-}
-
-.runo .v-buttongroup .v-button-left .v-button-wrap {
-	border-radius: 11px 0 0 11px;
-	border-width: 1px 0 1px 1px;
-}
-
-.runo .v-buttongroup .v-button-middle .v-button-wrap {
-	border-radius: 0;
-	border-width: 1px 0px 1px 1px;
-}
-
-.runo .v-buttongroup .v-button-right .v-button-wrap {
-	border-radius: 0 11px 11px 0;
-	border-width: 1px 1px 1px 1px;
-}
+/******************************** ESTILOS PARA VISTAS *********************************/
 
 
-.chameleon .v-buttongroup {
-	border: 0;
+/* GENERAL */
+
+.o3-theme .o3-control-view-refresh-line {
+    margin-top: 10px;
+    padding-top: 5px;
+    border-top: 1px solid #eaeaea;
 }
 
-.chameleon .v-buttongroup .v-button {
-	padding: 0;
+.o3-theme .o3-control-member {
+    overflow: auto;
 }
 
-.chameleon .v-buttongroup .v-button-left,
-.chameleon .v-buttongroup .v-button-left.v-disabled,
-.chameleon .v-buttongroup .v-button-left.v-disabled:active,
-.chameleon .v-buttongroup .v-button-left.v-disabled:focus {
-	border-radius: 3px 0 0 3px;
-	border-width: 1px 0 1px 1px;
+.o3-theme .o3-control-loader::after {
+    content: "";
+    background-image: url("../common/images/loading.gif");
+    background-repeat: no-repeat;
+    background-position: 50% center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(255, 255, 255, 0.5);
+    z-index: 5;
 }
 
-.chameleon .v-buttongroup .v-button-middle,
-.chameleon .v-buttongroup .v-button-middle.v-disabled,
-.chameleon .v-buttongroup .v-button-middle.v-disabled:active,
-.chameleon .v-buttongroup .v-button-middle.v-disabled:focus {
-	border-radius: 0;
-	border-width: 1px 0px 1px 1px;
+
+/* BOTONES */
+
+.o3-theme .o3-button-box-horizontal {
+    overflow-y: hidden;
+    margin-bottom: 5px;
 }
 
-.chameleon .v-buttongroup .v-button-right,
-.chameleon .v-buttongroup .v-button-right.v-disabled,
-.chameleon .v-buttongroup .v-button-right.v-disabled:active,
-.chameleon .v-buttongroup .v-button-right.v-disabled:focus {
-	border-radius: 0 3px 3px 0;
-	border-width: 1px 1px 1px 1px;
+.o3-theme .o3-control-member-boxdimension-button.v-button {
+    margin-right: 2px !important;
+    margin-top: 2px !important;
 }
+
+.o3-theme .o3-control-member-boxdimension-button .v-button-wrap {
+    white-space: nowrap;    
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.o3-theme .o3-member-button-dimension .v-formlayout-contentcell {
+    padding-top: 0 !important;
+}
+
+.v-app .o3-theme .o3-control-member-boxdimension-button.v-button:hover {
+    background: #777777;
+    color: white;
+    text-shadow: 0px 0px 1px black;
+    border-color: #555555;
+}
+
+.o3-theme .o3-control-member-boxdimension-button:hover .v-button-wrap .v-button-caption {
+    color: white !important;
+    text-shadow: 0px 0px 1px black;
+}
+
+.o3-theme .o3-control-member-boxdimension-button.v-pressed-box {
+    border: 1px solid #D22C22 !important;
+}
+
+.o3-theme .o3-control-member-boxdimension-button.v-pressed-box,
+.o3-theme .o3-control-member-boxdimension-button.v-pressed-box .v-button-wrap,
+.o3-theme .o3-control-member-boxdimension-button.v-pressed-box .v-button-wrap .v-button-caption {
+    background: #D22C22 !important;
+    color: white;
+}
+
+
+/* LISTA */
+
+.o3-theme .o3-control-member-list-box-dimension {
+    min-width: 150px;
+    margin-bottom: 1px;
+}
+
+.o3-theme .o3-control-list-box-dimension {
+    min-width: 150px;
+    margin-bottom: 5px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #cacaca;
+}
+
+.o3-theme .o3-control-member-list-box-dimension .v-panel-captionwrap {
+    background: #F3F3F3 !important;
+    color: black !important;
+    border: 1px solid #C4C4C4 !important;
+    padding: 5px;
+}
+
+.o3-theme .o3-control-member-list-box-dimension .v-panel-captionwrap .v-panel-caption span {
+    color: black;
+    border: none;
+}
+
+.o3-theme .o3-nested-select-component-panel {
+    margin: 3px;
+}
+
+.o3-theme .o3-nested-select-component-panel .v-panel-captionwrap {
+    background: #E0E0E0;
+    border: none;
+}
+
+.o3-theme .o3-nested-select-component-panel .v-panel-captionwrap .v-panel-caption span {
+    color: black;
+}
+
+.o3-theme .o3-control-member-list-box-dimension .o3-member-list-option-list-itemoption {
+    padding: 3px 5px 5px 5px;
+    /*border-bottom: 1px solid #eee;*/
+}
+
+.o3-theme .o3-control-parameters-box .v-panel-captionwrap {
+    background: #E0E0E0;
+    border: none;
+}
+
+.o3-theme .o3-control-parameters-box .v-panel-captionwrap .v-panel-caption span {
+    color: black;
+}
+
+
+/* NESTED */
+
+.o3-theme .o3-editor-select-control-horizontal {
+    margin-bottom: 10px;
+}
+
+.v-app .o3-theme .o3-control-view-nested-fonticon-clean.v-button {
+    background: none;
+    border: none;
+    padding: 0px;
+    position: relative;
+    box-shadow: none;
+}
+
+.o3-theme .v-button:hover.o3-control-view-nested-fonticon-clean::before {
+    color: white;
+}
+
+.o3-theme .o3-vertical-maincontainer .v-caption-o3-select-container {
+    text-align: left;
+}
+
+.o3-theme .o3-horizontal-maincontainer .v-formlayout-row {
+    display: inline;
+    margin-right: 10px;
+}
+
+.o3-theme .o3-horizontal-maincontainer {
+    margin-right: 5px!important;
+}
+
+.o3-theme .o3-horizontal-maincontainer td {
+    display: table-row;
+}
+
+.o3-theme .o3-horizontal-maincontainer .v-formlayout-captioncell {
+    text-align: right;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.o3-theme .o3-horizontal-maincontainer .v-formlayout-captioncell .v-caption {
+    margin-bottom: 5px!important;
+    text-align: left;
+}
+
+.o3-theme .o3-control-view-nested-fonticon-clean.ids-vaadin-icon-trash::before {
+    font-size: 17px;
+    margin-top: 4px;
+}
+
+.o3-theme .o3-control-view-nested-fonticon-clean .v-button-wrap {
+    display: none;
+}
+
+
+/* BOTONES */
+
+.o3-theme .o3-member-button-dimension .v-caption-o3-control-member-boxdimension-left {
+    text-align: left !important;
+    padding-bottom: 10px;
+}
+
+.o3-theme .o3-member-button-dimension .v-caption-o3-control-member-boxdimension-center {
+    text-align: center !important;
+    padding-bottom: 10px;
+}
+
+.o3-theme .o3-member-button-dimension .v-caption-o3-control-member-boxdimension-right {
+    text-align: right !important;
+    padding-bottom: 10px;
+}
+
+
+/* COMBO SIMPLE */
+.o3-theme .o3-member-combo-dimension .v-formlayout-contentcell {
+    padding-top: 0 !important;
+}
+
+.o3-theme .o3-member-combo-dimension .v-formlayout-captioncell {
+    padding-top: 0px !important;
+}
+
+.o3-theme .o3-member-combo-dimension .v-formlayout-row td {
+    padding-bottom: 0px !important;
+    vertical-align: top;
+    align-items: initial;
+}
+
+.o3-theme .o3-member-combo-dimension .v-caption-o3-token-field {
+    float: left;
+    overflow-x: auto;
+}
+
+.o3-theme .o3-control-combo-simple-deleteAll {
+    height: 18px;
+    margin: 0;
+    border: none !important;
+    background: none;
+    color: black;
+    font-size: 15px;
+    box-shadow: none;
+    background: none;
+}
+
+.o3-theme .o3-control-combo-simple-deleteAll:hover.ids-vaadin-icon-trash:before {
+    color: white;
+}
+
+.o3-theme .o3-member-button-dimension-left .v-caption-o3-control-member-boxdimension {
+    text-align: left !important;
+}
+
+.o3-theme .o3-member-button-dimension-center .v-caption-o3-control-member-boxdimension {
+    text-align: center !important;
+}
+
+.o3-theme .o3-member-button-dimension-right .v-caption-o3-control-member-boxdimension {
+    text-align: right !important;
+}
+
+.o3-theme .o3-button-box-dimension {
+    min-height: 30px;
+    padding-bottom: 5px;
+    display: inline;
+}
+
+.o3-theme .o3-control-member-boxdimension-left .v-caption-o3-token-field-left {
+    text-align: left !important;
+}
+
+.o3-theme .o3-control-member-boxdimension-center .v-caption-o3-token-field-center {
+    text-align: center !important;
+}
+
+.o3-theme .o3-control-member-boxdimension-right .v-caption-o3-token-field-right {
+    text-align: right !important;
+}
+
+.o3-theme .o3-control-member-list .o3-control-member-list-box-dimension.v-panel .v-panel-captionwrap .v-panel-caption-left {
+    text-align: left !important;
+}
+
+.o3-theme .o3-control-member-list .o3-control-member-list-box-dimension.v-panel .v-panel-captionwrap .v-panel-caption-center {
+    text-align: center !important;
+}
+
+.o3-theme .o3-control-member-list .o3-control-member-list-box-dimension.v-panel .v-panel-captionwrap .v-panel-caption-right {
+    text-align: right !important;
+}
+
+.control-tokenfield-layout {
+	margin-bottom: 5px;
+}
+
+.label-field-left {
+    margin-top: 3px;
+    padding-right: 5px;
+    vertical-align: text-top !important;
+    text-align: left !important;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.label-field-center {
+    margin-top: 3px;
+    padding-right: 5px;
+    vertical-align: text-top !important;
+    text-align: center !important;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.label-field-right {
+    margin-top: 3px;
+    padding-right: 5px;
+    vertical-align: text-top !important;
+    text-align: right !important;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.o3-theme .o3-member-combo-dimension .v-caption-o3-token-field-left {
+    margin-top: 3px;
+    vertical-align: text-top !important;
+    text-align: left !important;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
+.o3-theme .o3-member-combo-dimension .v-caption-o3-token-field-center {
+    margin-top: 3px;
+    vertical-align: text-top !important;
+    text-align: center !important;
+    width: 100%;    
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
+.o3-theme .o3-member-combo-dimension .v-caption-o3-token-field-right {
+    margin-top: 3px;
+    vertical-align: text-top !important;
+    text-align: right !important;
+    width: 100%;    
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
+.o3-theme .o3-member-combo-dimension .v-absolutelayout-margin {
+    overflow: auto !important;
+}
+
+.v-csslayout.o3-token-field {
+    display: inline;    
+}
+
+.tokenfield-control-horizontal {
+	width: calc(100% - 5px);
+    display: inline-block; 
+}
+
+
+.tokenfield-control-horizontal > div:nth-child(1) {
+    display: inline-block;        
+    width: 100%;    
+}
+
+.tokenfield-control-horizontal > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) {
+    display: inline-block;        
+    width: 100%;    
+}
+
+.o3-theme .tokenfield-control-horizontal .v-filterselect-input {
+    width: 100% !important;
+}
+
+.tokenfield-control-horizontal .v-layout .v-slot:nth-child(n+2) {
+    display: inline-block;
+    padding-top: 1px;
+    margin: 0 2px 0 2px;
+}
+ 
+
+.tokenfield-control-horizontal .v-layout .v-slot:nth-child(n+2) .v-button-caption {
+    display: inline-flex;        
+}
+
+.tokenfield-control-horizontal .v-layout .v-slot:nth-child(n+2) .v-button-caption >  div:nth-child(1) {
+    width: 100%;    
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 240px;
+}
+
+
+.tokenfield-control-horizontal .v-layout .v-slot:nth-child(n+2) .v-button-caption >  div:nth-child(2) {
+    width: 12px;   
+    padding-left: 3px;
+}
+
+.tokenfield-control-horizontal .v-filterselect .v-widget {
+    width:100% !important;    
+}
+
+.o3-token-field-horizontal {
+    min-height: 56px;
+    width: 100%;
+}
+
+.o3-token-field-horizontal > div:nth-child(1)  {
+    float: left;
+	width: calc(100% - 36px);
+}
+
+.o3-token-field-horizontal > div:nth-child(2)  {
+    float: right;
+	width: 36px;
+	height: 24px;
+	padding-top: 3px;
+}
+
+.o3-remove-all-token {
+    position: absolute;
+    margin-left: 240px;
+}
+
+.o3-remove-all-list {
+    position: absolute;
+    margin-left: 140px;
+}
+
+.v-horizontallayout.v-layout.v-horizontal.v-widget.panelstyle.v-horizontallayout-panelstyle {
+    background: none repeat scroll 0 0 #F1F1F1;
+    width: 100%;
+    height: 28px;
+    padding-left: 5px;
+    border-bottom: 1px solid #ccc;
+}
+
+.v-horizontallayout.v-layout.v-horizontal.v-widget.panelstyle.v-horizontallayout-panelstyle .v-label {
+    font-size: 14px;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.v-verticallayout.v-layout.v-vertical.v-widget.panelCaption.v-verticallayout-panelCaption {
+    width: 100%;
+}
+
+.options-group-listbox {
+    padding: 6px;
+}
+
+.o3-map-editor-source {
+    padding-top: 5px;
+}
+
+.o3-map-editor-general {
+    padding-top: 5px;
+}
+
+.o3-map-editor-advanced {
+    padding-top: 5px;
+}
+
+.o3-theme .dashlet-overflow {
+    overflow: auto;
+}
+
+.label-colselector-drag-drop-Info {
+	font-size: 10px;
+}
+
+.o3-theme .control-message {
+    padding-left: 5px;
+}
+
+
+.v-tree-node-caption-disabled {
+    color: black;
+    font-style: italic;
+    //border-style:solid;
+	//border-width:1px;
+}
+
+.v-tree-checkboxed .v-tree-node-caption-unchecked div span {
+    background: url("../common/images/unchecked.png") no-repeat;
+    background-position-x: 2px;
+    background-position-y: 2px;
+    padding-left: 20px;
+    //border-style:solid;
+	//border-width:1px; 
+}
+
+.v-tree-checkboxed .v-tree-node-caption-checked div span {
+    background: url("../common/images/checked.png") no-repeat;
+    background-position-x: 2px;
+    background-position-y: 2px;
+    padding-left: 20px;
+    //border-style:solid;
+	//border-width:1px;
+}
+
+.dimension-editor-buttons {
+	position: absolute;
+	padding-left: 10px;
+    right: 5px;    
+    bottom: 5px; 
+}
+
+.dimension-editor-buttons > div:last-child .icon-button {
+    padding-right: 5px;
+    padding-left: 5px;
+    display: inline-block;
+    box-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.25);
+    border: 1px solid rgba(34, 36, 38, 0.25); 
+}
+
+
