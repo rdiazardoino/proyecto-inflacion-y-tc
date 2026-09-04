@@ -1,0 +1,42 @@
+[
+ {
+  "tag": "A",
+  "texto": "Skip to content",
+  "x": -1,
+  "y": -160001,
+  "w": 1,
+  "h": 1
+ },
+ {
+  "tag": "A",
+  "texto": "IMAE",
+  "x": 915,
+  "y": 102,
+  "w": 113,
+  "h": 44
+ },
+ {
+  "tag": "A",
+  "texto": "Informe de Cuentas Nacionales Trimestrales",
+  "x": 789,
+  "y": 144,
+  "w": 367,
+  "h": 40
+ },
+ {
+  "tag": "A",
+  "texto": "Cuentas Nacionales Anuales",
+  "x": 842,
+  "y": 184,
+  "w": 261,
+  "h": 40
+ },
+ {
+  "tag": "A",
+  "texto": "Cuentas Internacionales",
+  "x": 857,
+  "y": 224,
+  "w": 230,
+  "h": 40
+ }
+]
