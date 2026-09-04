@@ -25,7 +25,7 @@ import pandas as pd
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.etl import bcu_cotizaciones, bcu_expectativas, bcu_ipom, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
+from src.etl import bcu_cotizaciones, bcu_expectativas, bcu_imae, bcu_ipom, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
 from src.etl import db, descubrir_fuentes, descubrir_js, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -265,6 +265,23 @@ def etl_expectativas(con) -> int:
     return total
 
 
+@paso("bcu_imae")
+def etl_imae(con) -> int:
+    """
+    IMAE (original, desestacionalizado, tendencia-ciclo), extraido de un
+    HTML estatico que embebe graficos Plotly con la serie completa --
+    ver docstring de bcu_imae.py. A diferencia de expectativas/TPM, ESTA
+    si es la serie historica completa, no solo el valor vigente.
+    """
+    resultado = bcu_imae.series()
+    if not resultado:
+        raise RuntimeError("no se encontro ningun widget de IMAE en la pagina del BCU")
+    total = 0
+    for var_id, s in resultado.items():
+        total += _upsert_serie(con, var_id, s, "BCU, IMAE-graficas.html (Plotly/R)")
+    return total
+
+
 @paso("descubrimiento_fuentes")
 def etl_descubrimiento(con) -> int:
     """
@@ -404,6 +421,7 @@ def main() -> None:
             etl_ipc(con)
             etl_ims(con)
             etl_expectativas(con)
+            etl_imae(con)
             etl_descubrimiento(con)
             etl_descubrimiento_js(con)
             etl_tpm(con)

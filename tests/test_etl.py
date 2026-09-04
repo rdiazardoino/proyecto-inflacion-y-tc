@@ -259,6 +259,24 @@ else:
     check("mes_referencia" in resultado, f"mes_referencia derivado ({resultado.get('mes_referencia')})")
 
 # ---------------------------------------------------------------------
+print("\n[10] Extraccion del IMAE (HTML real del BCU, graficos Plotly)")
+from src.etl import bcu_imae  # noqa: E402
+
+IMAE_DIR = (Path(__file__).resolve().parents[1] / "data" / "raw" /
+           "descubrimiento" / "imae_bcu")
+_archivos_imae = list(IMAE_DIR.glob("*IMAE-graficas*")) if IMAE_DIR.exists() else []
+if not _archivos_imae:
+    print("  (sin pagina archivada; se salta la extraccion real)")
+else:
+    html = _archivos_imae[-1].read_text(encoding="utf-8", errors="replace")
+    resultado = bcu_imae.parsear(html)
+    check(bool(resultado), "se extrajo al menos un widget de IMAE")
+    check("imae_desestacionalizado_idx" in resultado, "serie desestacionalizada presente")
+    for var_id, s in resultado.items():
+        check(len(s) > 100, f"{var_id}: {len(s)} obs (esperable > 100)")
+        check(s.between(50, 200).all(), f"{var_id}: valores en rango plausible (base ~100)")
+
+# ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")
 for f in fallos:
     print("  -", f)

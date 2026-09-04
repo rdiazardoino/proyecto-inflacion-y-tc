@@ -53,14 +53,19 @@ EXT_PLANILLA = (".xls", ".xlsx", ".csv", ".ods")
 # en un blob de datos de la app, no un href navegable).
 FUENTES_JS: dict[str, dict] = {
     "expectativas_bcu_js": {"url": "https://subsitio.bcu.gub.uy/politica-monetaria/"},
-    # confirmado por screenshot real el 4-sep-2026: el grafico SI trae la
-    # serie (TCRE Global/Extrarregional/Regional), pero el icono de
-    # exportar es un dibujo sobre <canvas> sin hook de DOM -- coordenadas
-    # calibradas contra ese screenshot (esquina superior izquierda del
-    # primer grafico). Paso 1: solo confirmar que el click abre un menu
-    # real (DOM) antes de intentar navegar el submenu "Herramientas".
+    # Descartado el 4-sep-2026: ni hover ni click en (478,160) (icono
+    # visible en la esquina superior izquierda del grafico) cambiaron nada
+    # -- las dos screenshots de calibracion salieron identicas entre si,
+    # asi que lo que parecia un cambio en la corrida anterior era solo la
+    # animacion de carga terminando sola, no una reaccion al mouse. El
+    # grafico SI trae la serie real (confirmado por screenshot), pero no
+    # hay ningun bloque de datos en el HTML (a diferencia de IMAE, que
+    # resulto ser Plotly con el JSON embebido) -- el dato llega por
+    # AJAX/XHR de un widget de terceros ("O3 BI Control Dashlet"). Se
+    # prueba capturar esas respuestas de red en vez de seguir adivinando
+    # clicks sobre un canvas.
     "itcr_bcu_js": {"url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre",
-                    "clic_coordenadas": (478, 160)},
+                    "capturar_red": True},
     "imae_bcu_js": {"url": "https://subsitio.bcu.gub.uy/estadisticas/", "clic_texto": "IMAE"},
 }
 
@@ -72,7 +77,8 @@ def _nombre_seguro(url: str) -> str:
 
 def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
                  clic_texto: str | None = None,
-                 clic_coordenadas: tuple[int, int] | None = None) -> dict:
+                 clic_coordenadas: tuple[int, int] | None = None,
+                 capturar_red: bool = False) -> dict:
     """Renderiza `url` con Chromium headless y archiva HTML + planillas + tablas.
 
     Si `clic_texto` viene dado, despues del primer render busca un elemento
@@ -88,6 +94,14 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
     aparece en el mapa de clickeables porque no es un <a>/<button> real,
     asi que la unica forma de activarlo es un click por coordenadas
     calibradas visualmente contra un screenshot real).
+
+    Si `capturar_red` es True, graba TODAS las respuestas HTTP con cuerpo
+    tipo JSON/texto que ocurren durante la carga y las archiva en
+    <clave>/red/ -- para widgets que piden sus datos por AJAX/XHR despues
+    del render inicial y no los dejan en ningun <script> del HTML (ver
+    ITCR: el grafico SI muestra la serie real, pero no hay ningun bloque
+    de datos embebido en el HTML como si lo hay en IMAE -- el dato tiene
+    que haber llegado por una llamada de red que esto captura).
     """
     from playwright.sync_api import sync_playwright  # import diferido: pesado, solo hace falta aca
 
@@ -98,6 +112,22 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
     with sync_playwright() as p:
         navegador = p.chromium.launch()
         pagina = navegador.new_page()
+
+        respuestas_capturadas: list[tuple[str, bytes]] = []
+        if capturar_red:
+            def _on_response(resp):                        # noqa: ANN001
+                try:
+                    ct = resp.headers.get("content-type", "")
+                    if "json" not in ct and "text" not in ct and "javascript" not in ct:
+                        return
+                    cuerpo = resp.body()
+                    if 200 < len(cuerpo) < 3_000_000:
+                        respuestas_capturadas.append((resp.url, cuerpo))
+                except Exception:                           # noqa: BLE001
+                    pass  # respuesta ya descartada/redirigida/etc, no es archivable
+
+            pagina.on("response", _on_response)
+
         try:
             pagina.goto(url, timeout=timeout_ms, wait_until="networkidle")
         except Exception as e:                            # noqa: BLE001
@@ -107,6 +137,19 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
 
         # margen extra para AJAX lento (el eportal Liferay es lento en frio)
         pagina.wait_for_timeout(3000)
+
+        if capturar_red and respuestas_capturadas:
+            red_dir = subdir / "red"
+            red_dir.mkdir(parents=True, exist_ok=True)
+            for i, (u, cuerpo) in enumerate(respuestas_capturadas):
+                destino = red_dir / f"{dt.date.today():%Y%m%d}_{i:03d}_{_nombre_seguro(u)}"
+                if not destino.suffix:
+                    destino = destino.with_suffix(".json")
+                try:
+                    destino.write_bytes(cuerpo)
+                except Exception as e:                      # noqa: BLE001
+                    print(f"[desc-js] {clave}: fallo guardando respuesta de red {u}: {e}")
+            print(f"[desc-js] {clave}: {len(respuestas_capturadas)} respuestas de red archivadas")
 
         if clic_texto:
             try:
@@ -242,7 +285,8 @@ def descubrir_todo_js() -> list[dict]:
     for clave, cfg in FUENTES_JS.items():
         try:
             resultados.append(_archivar_js(clave, cfg["url"], clic_texto=cfg.get("clic_texto"),
-                                           clic_coordenadas=cfg.get("clic_coordenadas")))
+                                           clic_coordenadas=cfg.get("clic_coordenadas"),
+                                           capturar_red=cfg.get("capturar_red", False)))
         except Exception as e:                            # noqa: BLE001
             print(f"[desc-js] {clave}: fallo total: {e}")
             resultados.append({"clave": clave, "html": None, "planillas": 0, "tablas": 0})

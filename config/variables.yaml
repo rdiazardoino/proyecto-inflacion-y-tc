@@ -134,14 +134,40 @@ inflacion:
     prioridad: importante
 
   - var_id: imae
-    nombre: "Indicador mensual de actividad economica"
+    nombre: "IMAE desestacionalizado (IVF, base 2016=100)"
     fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Documents/IMAE-graficas.html"
+    metodo_acceso: "HTML estatico (no requiere navegador headless -- confirmado 4-sep-2026). Reporte R/knitr con graficos Plotly embebidos como <script type='application/json' data-for='htmlwidget-...'>; el JSON trae el nivel del indice completo por trace (src/etl/bcu_imae.py). Se usa la version desestacionalizada: un HP filter sobre una serie con estacionalidad adentro confundiria estacionalidad con ciclo."
     frecuencia: M
     rezago_dias: 45
     transformacion: [pct_yoy, brecha_hp]
     hipotesis_econ: "Proxy mensual de brecha de producto para la curva de Phillips."
     modelo_destino: ambos
     prioridad: importante
+
+  - var_id: imae_original_idx
+    nombre: "IMAE original (IVF, base 2016=100, sin desestacionalizar)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Documents/IMAE-graficas.html"
+    metodo_acceso: "Igual que 'imae', mismo archivo, otro trace del Plotly."
+    frecuencia: M
+    rezago_dias: 45
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Control cruzado del IMAE desestacionalizado."
+    modelo_destino: ambos
+    prioridad: complementaria
+
+  - var_id: imae_tendencia_ciclo_idx
+    nombre: "IMAE tendencia-ciclo (IVF, base 2016=100)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Documents/IMAE-graficas.html"
+    metodo_acceso: "Igual que 'imae', mismo archivo, otro trace del Plotly."
+    frecuencia: M
+    rezago_dias: 45
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Version ya filtrada por el BCU (sin el ruido de alta frecuencia de la serie SA) -- alternativa a aplicar un HP filter propio."
+    modelo_destino: ambos
+    prioridad: complementaria
 
   - var_id: expectativas_inflacion_12m
     nombre: "Mediana de expectativas de inflacion a 12 meses (Encuesta BCU)"
