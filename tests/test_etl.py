@@ -282,9 +282,14 @@ from src.etl import bcu_itcr  # noqa: E402
 
 ITCR_DIR = (Path(__file__).resolve().parents[1] / "data" / "raw" /
            "descubrimiento" / "itcr_bcu_js")
-_render_itcr = list(ITCR_DIR.glob("*render.html")) if ITCR_DIR.exists() else []
+# el archivo mas reciente puede ser una pagina de error real del BCU (ej.
+# 503 Service Unavailable, unos cientos de bytes) en vez de un render real
+# (cientos de KB) -- se filtra por tamano para no fallar el test por una
+# falla transitoria del servidor, no del parser.
+_render_itcr = [p for p in ITCR_DIR.glob("*render.html") if p.stat().st_size > 50_000] \
+    if ITCR_DIR.exists() else []
 if not _render_itcr:
-    print("  (sin pagina archivada; se salta la extraccion real)")
+    print("  (sin pagina archivada [o solo paginas de error]; se salta la extraccion real)")
 else:
     html = _render_itcr[-1].read_text(encoding="utf-8", errors="replace")
     pares = bcu_itcr._pares_portlet_col(html)

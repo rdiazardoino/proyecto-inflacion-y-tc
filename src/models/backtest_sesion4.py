@@ -44,12 +44,14 @@ def _cargar_series(con) -> dict[str, pd.Series]:
     ims = db.serie(con, "salario_nominal_ims").asfreq("MS")
     brl = db.serie(con, "usdbrl").resample("MS").mean()
     dxy = db.serie(con, "dxy").resample("MS").mean()
+    imae = db.serie(con, "imae").asfreq("MS")
     pi = _log_diff_pct(ipc)
     dtc = _log_diff_pct(tc)
     return {
         "pi": pi, "tc_nivel": tc, "dtc": dtc,
         "dbrent": _log_diff_pct(brent), "dcpius": _log_diff_pct(cpi_us),
         "ims_nivel": ims, "dbrl": _log_diff_pct(brl), "ddxy": _log_diff_pct(dxy),
+        "imae": imae,
     }
 
 
@@ -58,7 +60,8 @@ def registrar_modelos(con) -> None:
         ("sarimax_topdown", "econ", "ipc_m",
          "AR(1)+exogenas rezagadas (TC,Brent,CPI_US,IMS yoy), rolling 96m", "v1"),
         ("phillips_reducida", "econ", "ipc_m",
-         "ECM hacia meta BCU 4.5% + TC rezagado, rolling 96m (sin expectativas ni brecha)", "v1"),
+         "ECM hacia meta BCU 4.5% + TC rezagado + brecha de producto (IMAE, filtro HP real-time "
+         "desde que hay suficiente historia), rolling 96m (sin expectativas dinamicas todavia)", "v1"),
         ("var2_reducido", "econ", "ipc_m",
          "VAR(2) [pi,DTC,DBRL,DDXY] sin TPM (bloqueada), rolling 96m", "v1"),
         ("var2_reducido", "econ", "tc_prom",
@@ -80,7 +83,7 @@ def _origenes(fecha_min, fecha_max, h_max):
 def correr_inflacion(series: dict) -> pd.DataFrame:
     df_s = sarimax_topdown.preparar_datos(
         series["pi"], series["dtc"], series["dbrent"], series["dcpius"], series["ims_nivel"])
-    df_p = phillips.preparar_datos(series["pi"], series["dtc"])
+    df_p = phillips.preparar_datos(series["pi"], series["dtc"], series["imae"])
     pi = series["pi"].dropna()
 
     # Piso de origenes: que exista al menos una ventana rolling llena antes

@@ -23,7 +23,7 @@ los datos disponibles hoy, ninguno de los tres se puede construir tal cual:
 | Modelo del plan | Bloqueo | Qué se construyó en su lugar |
 |---|---|---|
 | SARIMAX bottom-up (13 divisiones) | Exógenas por división (FAO/CBOT, novillo INAC, combustibles ANCAP, tarifas UTE/OSE) no están cargadas | **SARIMAX top-down** (agregado) con las exógenas que sí existen: TC, Brent, CPI EEUU, IMS |
-| Phillips ampliada (expectativas + brecha) | Encuesta de Expectativas bloqueada; sin IMAE no hay brecha de producto | **Phillips reducida**: forma de corrección de error hacia la meta del BCU (4,5%) + TC rezagado |
+| Phillips ampliada (expectativas + brecha) | Encuesta de Expectativas todavía no integrada como regresor dinámico; brecha de producto RESUELTA 4-sep-2026 (IMAE + filtro HP real-time) | **Phillips reducida+brecha**: ECM hacia la meta del BCU (4,5%) + TC rezagado + brecha de producto (IMAE) donde hay suficiente historia |
 | BVAR(2) [ΔTC, π, TPM, ΔBRL, ΔDXY] | `tpm_bcu` tiene un único punto histórico (5,75%, del IPOM 1T-2026) — no hay serie mensual de la TPM | **VAR(2) reducido** [π, ΔTC, ΔBRL, ΔDXY], sin TPM, sin priors Minnesota |
 
 Los tres se estiman en **ventana móvil de 96 meses** (8 años), no expanding
@@ -77,10 +77,13 @@ estructura de corrección de error hacia un ancla estable. Además, su
 horizontes, contra 48-76% de `rw_estacional`) — acierta más veces la
 dirección del cambio, aunque su magnitud (MAE) sea peor. Esto sugiere que
 el término de convergencia hacia la meta capta algo real sobre el sentido
-del movimiento, incluso si el punto no supera al benchmark. Candidato
-natural a mejorar cuando haya Encuesta de Expectativas real (reemplazando
-la meta constante por el ancla dinámica que pide el plan) y brecha de
-producto (con IMAE).
+del movimiento, incluso si el punto no supera al benchmark. Agregada el
+4-sep-2026 la brecha de producto (IMAE, filtro HP real-time) como
+regresor adicional -- MAE prácticamente sin cambios en el corte completo
+(la brecha solo entra en origenes recientes, con suficiente historia de
+IMAE). Candidato natural a mejorar cuando la Encuesta de Expectativas se
+integre como regresor dinámico (reemplazando la meta constante por el
+ancla que pide el plan).
 
 **SARIMAX top-down es el que peor generaliza a los horizontes cortos-medios**
 (único con significancia clara en h=6 y h=12). Con solo 6 parámetros sobre
@@ -106,9 +109,10 @@ exige el plan — no presentar un modelo más sofisticado como si ganara
 cuando no lo hace.
 
 **Camino de mejora, en orden de esfuerzo/impacto esperado:**
-1. Cargar la Encuesta de Expectativas del BCU (bloqueada, requiere
-   navegador headless o descarga manual) — mejora directa a Phillips.
-2. Cargar IMAE (brecha de producto) — completa la Phillips ampliada.
+1. Integrar `expectativas_inflacion_12m` (ya cargada desde el 4-sep-2026,
+   ver `docs/manifest_fuentes.md`) como regresor dinámico en Phillips, en
+   vez de la meta constante — mejora directa.
+2. ~~Cargar IMAE (brecha de producto)~~ — RESUELTO el 4-sep-2026.
 3. Reconstruir la serie histórica de la TPM parseando los IPOM trimestrales
    pasados (~20 informes desde 2020) o las actas del Copom — habilita el
    BVAR real.
