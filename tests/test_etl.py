@@ -271,7 +271,7 @@ else:
     html = _archivos_imae[-1].read_text(encoding="utf-8", errors="replace")
     resultado = bcu_imae.parsear(html)
     check(bool(resultado), "se extrajo al menos un widget de IMAE")
-    check("imae_desestacionalizado_idx" in resultado, "serie desestacionalizada presente")
+    check("imae" in resultado, "serie desestacionalizada ('imae') presente")
     for var_id, s in resultado.items():
         check(len(s) > 100, f"{var_id}: {len(s)} obs (esperable > 100)")
         check(s.between(50, 200).all(), f"{var_id}: valores en rango plausible (base ~100)")

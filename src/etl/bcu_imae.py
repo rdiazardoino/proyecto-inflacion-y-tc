@@ -37,10 +37,17 @@ URL = "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Documents/IMAE-graficas
 _PATRON_WIDGET = re.compile(
     r'<script type="application/json" data-for="htmlwidget-[^"]+">(.*?)</script>', re.S)
 
-# indice del widget dentro del HTML -> (nombre de la serie de nivel, var_id)
+# indice del widget dentro del HTML -> var_id. 'imae' (no
+# 'imae_desestacionalizado_idx') es el nombre real registrado en
+# config/variables.yaml para la serie principal -- bug real encontrado en
+# la primera corrida contra el BCU real: el paso fallaba con "var_id
+# 'imae_desestacionalizado_idx' no esta registrado en la tabla
+# variables", y como el error no estaba aislado por serie, tambien se
+# perdia la carga de imae_tendencia_ciclo_idx (el tercer widget, nunca
+# llegaba a intentarse).
 _WIDGETS = {
     0: "imae_original_idx",
-    1: "imae_desestacionalizado_idx",
+    1: "imae",
     2: "imae_tendencia_ciclo_idx",
 }
 

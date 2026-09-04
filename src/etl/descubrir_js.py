@@ -113,7 +113,7 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
         navegador = p.chromium.launch()
         pagina = navegador.new_page()
 
-        respuestas_capturadas: list[tuple[str, bytes]] = []
+        respuestas_capturadas: list[dict] = []
         if capturar_red:
             def _on_response(resp):                        # noqa: ANN001
                 try:
@@ -122,7 +122,12 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
                         return
                     cuerpo = resp.body()
                     if 200 < len(cuerpo) < 3_000_000:
-                        respuestas_capturadas.append((resp.url, cuerpo))
+                        req = resp.request
+                        respuestas_capturadas.append({
+                            "url": resp.url, "metodo": req.method,
+                            "post_data": req.post_data, "content_type": ct,
+                            "status": resp.status, "cuerpo": cuerpo,
+                        })
                 except Exception:                           # noqa: BLE001
                     pass  # respuesta ya descartada/redirigida/etc, no es archivable
 
@@ -141,14 +146,23 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
         if capturar_red and respuestas_capturadas:
             red_dir = subdir / "red"
             red_dir.mkdir(parents=True, exist_ok=True)
-            for i, (u, cuerpo) in enumerate(respuestas_capturadas):
-                destino = red_dir / f"{dt.date.today():%Y%m%d}_{i:03d}_{_nombre_seguro(u)}"
+            manifiesto = []
+            for i, r in enumerate(respuestas_capturadas):
+                nombre = f"{dt.date.today():%Y%m%d}_{i:03d}_{_nombre_seguro(r['url'])}"
+                destino = red_dir / nombre
                 if not destino.suffix:
                     destino = destino.with_suffix(".json")
                 try:
-                    destino.write_bytes(cuerpo)
+                    destino.write_bytes(r["cuerpo"])
                 except Exception as e:                      # noqa: BLE001
-                    print(f"[desc-js] {clave}: fallo guardando respuesta de red {u}: {e}")
+                    print(f"[desc-js] {clave}: fallo guardando respuesta de red {r['url']}: {e}")
+                    continue
+                manifiesto.append({"archivo": destino.name, "url": r["url"], "metodo": r["metodo"],
+                                   "post_data": r["post_data"], "content_type": r["content_type"],
+                                   "status": r["status"], "bytes": len(r["cuerpo"])})
+            destino_manifiesto = red_dir / f"{dt.date.today():%Y%m%d}_manifiesto.json"
+            destino_manifiesto.write_text(json.dumps(manifiesto, ensure_ascii=False, indent=1),
+                                          encoding="utf-8")
             print(f"[desc-js] {clave}: {len(respuestas_capturadas)} respuestas de red archivadas")
 
         if clic_texto:
