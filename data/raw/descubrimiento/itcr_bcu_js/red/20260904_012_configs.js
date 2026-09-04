@@ -1,0 +1,42 @@
+var dashletConfig = {
+    controlDashlet_timeout: 1000 * 300, // 5 minutos
+    gridDashlet_timeout: 1000 * 300,
+    chartDashlet_timeout: 1000 * 300,
+    viewDashlet_timeout: 1000 * 300, // A partir de la version 7.0.7 se usa este timeout para chart y grillas
+    advancedViewDashlet_timeout: 1000 * 300,
+    show_adhoc_nav: false, 
+    defaultChartColors: [
+        '#006699',
+        '#339966',
+        '#666633',
+        '#993366',
+        '#990033',
+        '#FF6633',
+        '#CC9966',
+        '#CCCC99',
+        '#9966FF',
+        '#0066FF',
+        '#006699',
+        '#3399FF',
+        '#FF9966',
+        '#B38200',
+        '#FFEEBF',
+        '#FFDD80',
+        '#0AD600',
+        '#079600',
+        '#C2FFBF',
+        '#85FF80',
+        '#FA0014',
+        '#AF000E',
+        '#FFBFC4',
+        '#FF808A',
+        '#FF6200',
+        '#B34500',
+        '#FFD8BF',
+        '#FFB180',
+        '#009C96',
+        '#006D69',
+        '#BFFFFD',
+        '#80FFFA'
+    ]
+};
