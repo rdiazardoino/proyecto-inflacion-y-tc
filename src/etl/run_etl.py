@@ -25,7 +25,7 @@ import pandas as pd
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.etl import bcu_cotizaciones, bcu_expectativas, bcu_imae, bcu_ipom, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
+from src.etl import bcu_cotizaciones, bcu_expectativas, bcu_imae, bcu_ipom, bcu_itcr, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
 from src.etl import db, descubrir_fuentes, descubrir_js, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -282,6 +282,27 @@ def etl_imae(con) -> int:
     return total
 
 
+@paso("bcu_itcr")
+def etl_itcr(con) -> int:
+    """
+    ITCR Global/Extrarregional/Regional, replicando sin navegador el
+    flujo de tres pedidos que usa el eportal (guest -> render_portlet ->
+    processCommands) contra el motor BI de terceros -- ver docstring de
+    bcu_itcr.py. Fragil por diseño: si el widget cambia de estructura,
+    este paso falla con una alerta clara en vez de corromper datos.
+    """
+    resultado = bcu_itcr.series()
+    fuentes = {"TCRE - Global": "itcr_global", "TCRE - Extrarregional": "itcr_extrarregional",
+               "TCRE - Regional": "itcr_regional"}
+    total = 0
+    for nombre, s in resultado.items():
+        var_id = fuentes.get(nombre)
+        if var_id is None:
+            continue
+        total += _upsert_serie(con, var_id, s, "BCU, eportal TCRE (motor O3 BI)")
+    return total
+
+
 @paso("descubrimiento_fuentes")
 def etl_descubrimiento(con) -> int:
     """
@@ -422,6 +443,7 @@ def main() -> None:
             etl_ims(con)
             etl_expectativas(con)
             etl_imae(con)
+            etl_itcr(con)
             etl_descubrimiento(con)
             etl_descubrimiento_js(con)
             etl_tpm(con)

@@ -230,6 +230,42 @@ tipo_cambio:
     modelo_destino: ambos
     prioridad: indispensable
 
+  - var_id: itcr_global
+    nombre: "Indice de Tipo de Cambio Real Efectivo Global (base 2017=100)"
+    fuente: BCU
+    fuente_url: "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"
+    metodo_acceso: "El eportal Liferay necesita un navegador para RENDERIZAR, pero el dato llega por tres pedidos HTTP encadenados a un motor BI de terceros (guest -> render_portlet -> processCommands, ver src/etl/bcu_itcr.py) -- no hace falta Playwright, solo requests con sesion (cookies). Fragil por depender de la estructura interna de ese widget."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Competitividad cambiaria agregada, mide desalineamiento del TC nominal respecto de fundamentos."
+    modelo_destino: tc
+    prioridad: complementaria
+
+  - var_id: itcr_extrarregional
+    nombre: "Indice de Tipo de Cambio Real Efectivo Extrarregional (base 2017=100)"
+    fuente: BCU
+    fuente_url: "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"
+    metodo_acceso: "Igual que itcr_global, misma consulta."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Competitividad frente a socios fuera de la region (principalmente EEUU/Europa/Asia)."
+    modelo_destino: tc
+    prioridad: complementaria
+
+  - var_id: itcr_regional
+    nombre: "Indice de Tipo de Cambio Real Efectivo Regional (base 2017=100)"
+    fuente: BCU
+    fuente_url: "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"
+    metodo_acceso: "Igual que itcr_global, misma consulta."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Competitividad frente a Argentina y Brasil -- el canal mas directo del pass-through regional."
+    modelo_destino: tc
+    prioridad: complementaria
+
   - var_id: usdbrl
     nombre: "USD/BRL"
     fuente: FRED

@@ -277,6 +277,50 @@ else:
         check(s.between(50, 200).all(), f"{var_id}: valores en rango plausible (base ~100)")
 
 # ---------------------------------------------------------------------
+print("\n[11] Extraccion del ITCR (piezas reales del BCU, sin red)")
+from src.etl import bcu_itcr  # noqa: E402
+
+ITCR_DIR = (Path(__file__).resolve().parents[1] / "data" / "raw" /
+           "descubrimiento" / "itcr_bcu_js")
+_render_itcr = list(ITCR_DIR.glob("*render.html")) if ITCR_DIR.exists() else []
+if not _render_itcr:
+    print("  (sin pagina archivada; se salta la extraccion real)")
+else:
+    html = _render_itcr[-1].read_text(encoding="utf-8", errors="replace")
+    pares = bcu_itcr._pares_portlet_col(html)
+    check(len(pares) == 2, f"se encontraron 2 pares portlet/columna (dio {len(pares)})")
+
+    _red_dir = ITCR_DIR / "red"
+    _render_portlet = sorted(_red_dir.glob("*render_portlet.json")) if _red_dir.exists() else []
+    _grandes = [p for p in _render_portlet if p.stat().st_size > 100_000]
+    if _grandes:
+        txt = _grandes[0].read_text(encoding="utf-8", errors="replace")
+        m_t = bcu_itcr._PATRON_TICKET.search(txt)
+        m_v = bcu_itcr._PATRON_VIEW.search(txt)
+        check(m_t is not None, "se extrajo un Ticket de un render_portlet real")
+        check(m_v is not None, "se extrajo una View de un render_portlet real")
+    else:
+        print("  (sin render_portlet.json archivado; se salta ticket/view)")
+
+    import json as _json
+    _tcre_grandes = sorted(_red_dir.glob("*tcre.json")) if _red_dir.exists() else []
+    _grid_real = None
+    for p in _tcre_grandes:
+        if 20_000 < p.stat().st_size < 35_000:
+            try:
+                _grid_real = _json.loads(p.read_text(encoding="utf-8", errors="replace"))
+                break
+            except Exception:                                # noqa: BLE001
+                continue
+    if _grid_real is None:
+        print("  (sin grid tcre.json archivado; se salta el parseo del grid)")
+    else:
+        res = bcu_itcr._series_del_grid(_grid_real)
+        check(bool(res), "se parseo al menos una serie del grid real")
+        for nombre, s in res.items():
+            check(len(s) > 50, f"{nombre}: {len(s)} obs (esperable > 50)")
+
+# ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")
 for f in fallos:
     print("  -", f)
