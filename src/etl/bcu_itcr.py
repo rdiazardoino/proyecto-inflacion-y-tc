@@ -2,15 +2,11 @@
 ITCR (Indice de Tipo de Cambio Real Efectivo) del BCU: Global,
 Extrarregional y Regional -- mensual, base 2017=100.
 
-Hallazgo real del 4-sep-2026: el eportal Liferay (ganges.bcu.gub.uy:8443)
-SI necesita un navegador para RENDERIZAR (confirmado por screenshot: el
-grafico muestra la serie completa 2019-2026), pero el dato en si llega
-por tres llamadas HTTP encadenadas a un motor BI de terceros ("O3 BI",
-IdeaSoft) -- no hace falta Playwright si se replican esas llamadas:
+Hallazgo real del 4-sep-2026: el dato llega por tres llamadas HTTP
+encadenadas a un motor BI de terceros ("O3 BI", IdeaSoft):
 
-  1. GET la pagina del guest (`/eportal/web/guest/tcre`) con una sesion
-     (requests.Session, cookies) -- trae el id de layout (p_l_id) y el
-     id de instancia del portlet O3ViewPortlet como markup estatico.
+  1. GET la pagina del guest (`/eportal/web/guest/tcre`) -- trae el id de
+     layout (p_l_id) y el id de instancia del portlet O3ViewPortlet.
   2. POST a `/eportal/c/portal/render_portlet` para ESE portlet -- la
      respuesta (un fragmento HTML con JS embebido) trae un "Ticket"
      (token de sesion del motor BI, valido solo para esta sesion HTTP) y
@@ -19,6 +15,18 @@ IdeaSoft) -- no hace falta Playwright si se replican esas llamadas:
      y un XML de consulta (`queryCommand`) que usa ese Ticket como
      "password" y esa View -- devuelve el grid real: fecha + TCRE
      Global/Extrarregional/Regional.
+
+INTENTO FALLIDO Y CORREGIDO (4-sep-2026): la primera version de este
+modulo hacia el paso 1 con `requests` puro (sin navegador), asumiendo
+que el markup con el portlet era HTML estatico del servidor -- fallaba
+en produccion con "no se encontro ningun portlet O3ViewPortlet en la
+pagina" porque NO lo es: el portlet se inserta en el DOM por una llamada
+AJAX que el propio Liferay dispara al cargar (visible en las respuestas
+de red capturadas por descubrir_js.py), y un GET plano nunca la ejecuta.
+Por eso el paso 1 SI necesita un navegador real (Playwright) -- los
+pasos 2 y 3 se hacen con el contexto de pedidos del propio navegador
+(`pagina.request`), que ya comparte las cookies de la sesion, en vez de
+armar una sesion de `requests` aparte.
 
 El ITCR tiene DOS graficos en la pagina (Indice y Variacion interanual),
 cada uno con su propio portlet/Ticket/View -- y trae valores DISTINTOS
@@ -40,9 +48,6 @@ from __future__ import annotations
 import re
 
 import pandas as pd
-import requests
-
-from src.etl import http_client
 
 BASE = "https://ganges.bcu.gub.uy:8443"
 URL_GUEST = f"{BASE}/eportal/web/guest/tcre"
@@ -114,24 +119,27 @@ def _pares_portlet_col(html_guest: str) -> list[dict]:
     return pares
 
 
-def _obtener_ticket_y_view(sesion: requests.Session, cfg: dict, timeout: int) -> tuple[str, str]:
+def _obtener_ticket_y_view(pagina, cfg: dict, timeout_ms: int) -> tuple[str, str]:
+    """`pagina`: Playwright Page ya navegada al guest -- se usa pagina.request
+    (comparte cookies con la pagina) en vez de una sesion de requests aparte."""
     params = {
         "p_l_id": cfg["p_l_id"], "p_p_id": cfg["portlet_id"], "p_p_lifecycle": "0",
         "p_t_lifecycle": "0", "p_p_state": "normal", "p_p_mode": "view",
         "p_p_col_id": cfg["col_id"], "p_p_col_pos": "0", "p_p_col_count": "1",
         "p_p_isolated": "1", "currentURL": "/eportal/web/guest/tcre",
     }
-    r = sesion.post(URL_RENDER_PORTLET, params=params, timeout=timeout)
-    r.raise_for_status()
-    m_ticket = _PATRON_TICKET.search(r.text)
-    m_view = _PATRON_VIEW.search(r.text)
+    r = pagina.request.post(URL_RENDER_PORTLET, params=params, timeout=timeout_ms)
+    if not r.ok:
+        raise RuntimeError(f"render_portlet respondio {r.status}")
+    texto = r.text()
+    m_ticket = _PATRON_TICKET.search(texto)
+    m_view = _PATRON_VIEW.search(texto)
     if not m_ticket or not m_view:
         raise RuntimeError("no se encontro Ticket/View en la respuesta de render_portlet")
     return m_ticket.group(1), m_view.group(1)
 
 
-def _consultar_grid(sesion: requests.Session, cfg: dict, ticket: str, view: str,
-                    timeout: int) -> dict:
+def _consultar_grid(pagina, cfg: dict, ticket: str, view: str, timeout_ms: int) -> dict:
     params = {
         "p_p_id": cfg["portlet_id"], "p_p_lifecycle": "2", "p_p_state": "normal",
         "p_p_mode": "view", "p_p_resource_id": "processCommands",
@@ -139,14 +147,17 @@ def _consultar_grid(sesion: requests.Session, cfg: dict, ticket: str, view: str,
         "p_p_col_count": "1",
         f"_{cfg['portlet_id']}_resource-name": "processCommands",
     }
-    datos = {
+    # 'form' (no 'data'): x-www-form-urlencoded, igual que el POST real del
+    # navegador -- 'data' en Playwright serializa a JSON por defecto.
+    formulario = {
         "senchapost": "true",
         "queryCommand": _QUERY_TEMPLATE.format(view=view),
         "username": "guest", "password": ticket,
         "x-rest-locale": "en_US", "typeAccept": "application/is-grid+json", "export": "false",
     }
-    r = sesion.post(URL_GUEST, params=params, data=datos, timeout=timeout)
-    r.raise_for_status()
+    r = pagina.request.post(URL_GUEST, params=params, form=formulario, timeout=timeout_ms)
+    if not r.ok:
+        raise RuntimeError(f"processCommands respondio {r.status}")
     return r.json()
 
 
@@ -165,7 +176,7 @@ def _series_del_grid(resultado: dict) -> dict[str, pd.Series]:
     return {nombre: pd.Series(vals, index=idx).sort_index() for nombre, vals in valores.items()}
 
 
-def series(timeout: int = 60) -> dict[str, pd.Series]:
+def series(timeout_ms: int = 60_000) -> dict[str, pd.Series]:
     """{'TCRE - Global': serie, 'TCRE - Extrarregional': serie, 'TCRE - Regional': serie}.
 
     Los NIVELES del indice (base 2017=100) -- la pagina tiene dos
@@ -174,20 +185,34 @@ def series(timeout: int = 60) -> dict[str, pd.Series]:
     consultan todos y se elige el resultado cuyos valores tienen cara de
     nivel (mediana > 40) en vez de variacion porcentual (tipicamente
     entre -30 y +30).
-    """
-    sesion = http_client.sesion()
-    html_guest = sesion.get(URL_GUEST, timeout=timeout).text
-    pares = _pares_portlet_col(html_guest)
 
-    candidatos: list[dict[str, pd.Series]] = []
-    errores = []
-    for cfg in pares:
+    El paso 1 (encontrar los portlets) necesita un navegador real -- el
+    portlet se inserta en el DOM por una llamada AJAX que Liferay dispara
+    al cargar, un GET plano nunca la ejecuta (ver docstring del modulo).
+    Los pasos 2 y 3 reusan el contexto de pedidos de esa misma pagina.
+    """
+    from playwright.sync_api import sync_playwright  # import diferido: pesado, solo hace falta aca
+
+    with sync_playwright() as p:
+        navegador = p.chromium.launch()
+        pagina = navegador.new_page()
         try:
-            ticket, view = _obtener_ticket_y_view(sesion, cfg, timeout)
-            resultado = _consultar_grid(sesion, cfg, ticket, view, timeout)
-            candidatos.append(_series_del_grid(resultado))
-        except Exception as e:                                # noqa: BLE001
-            errores.append(f"{cfg['portlet_id']}: {type(e).__name__}: {e}")
+            pagina.goto(URL_GUEST, timeout=timeout_ms, wait_until="networkidle")
+            pagina.wait_for_timeout(3000)  # margen para el AJAX que inserta los portlets
+            html_guest = pagina.content()
+            pares = _pares_portlet_col(html_guest)
+
+            candidatos: list[dict[str, pd.Series]] = []
+            errores = []
+            for cfg in pares:
+                try:
+                    ticket, view = _obtener_ticket_y_view(pagina, cfg, timeout_ms)
+                    resultado = _consultar_grid(pagina, cfg, ticket, view, timeout_ms)
+                    candidatos.append(_series_del_grid(resultado))
+                except Exception as e:                            # noqa: BLE001
+                    errores.append(f"{cfg['portlet_id']}: {type(e).__name__}: {e}")
+        finally:
+            navegador.close()
 
     for series_por_nombre in candidatos:
         medianas = [s.abs().median() for s in series_por_nombre.values()]

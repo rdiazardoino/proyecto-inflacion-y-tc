@@ -167,18 +167,3 @@ def post(url: str, timeout: int = 120, **kw) -> requests.Response:
         r = requests.post(url, timeout=timeout, verify=str(bundle), **kw)
         r.raise_for_status()
         return r
-
-
-def sesion() -> requests.Session:
-    """
-    Sesion con cookies persistentes, para flujos de varios pedidos
-    encadenados donde el servidor exige la misma sesion HTTP en todos
-    (ver bcu_itcr.py: guest -> render_portlet -> processCommands). Usa
-    el mismo bundle de verificacion que get()/post(); no repara la
-    cadena SSL sola -- si hace falta, el llamador dispara la reparacion
-    con get()/post() una vez y reintenta con la sesion ya creada.
-    """
-    s = requests.Session()
-    s.headers.update(HEADERS)
-    s.verify = _verify_actual()
-    return s
