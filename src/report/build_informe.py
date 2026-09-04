@@ -18,6 +18,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.report import datos_dashboard as dd  # noqa: E402
+from src.report import glosario as glos  # noqa: E402
 from src.report.build_dashboard import _fdia, _fmes, _fmes_abr  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -41,6 +42,11 @@ td:first-child, th:first-child { text-align:left; }
 .nota { color:#52514e; font-size:9pt; font-style:italic; }
 .disclaimer { background:#f5f5f3; border-left:3pt solid #0a3470; padding:8pt 10pt; font-size:9pt; margin:10pt 0; }
 .pendiente { color:#a3402a; }
+.resumen-narrativo { font-size:11pt; line-height:1.55; margin:8pt 0 14pt; }
+.glosario { columns:2; column-gap:16pt; font-size:8.5pt; line-height:1.4; margin:8pt 0 4pt; }
+.glosario .gt { break-inside:avoid; margin-bottom:8pt; }
+.glosario .gt b { font-family: system-ui, sans-serif; font-size:9pt; }
+.glosario .gt p { margin:1pt 0 0; color:#333; }
 """
 
 
@@ -65,13 +71,16 @@ def construir(mes: str | None = None) -> Path:
 
     prob = d["escenarios"].set_index("escenario_id")["probabilidad"]
     met = d["metricas_backtest"]
-    mae_ipc_completo = met[(met["objetivo"] == "ipc_m") & (met["horizonte_meses"] == 1)]
     tabla_mae = "".join(
-        f"<tr><td>{r['modelo_id'].replace('bench_','')}</td>"
+        f"<tr><td>{glos.nombre_modelo(r['modelo_id'])}</td>"
         f"<td>{r['mae']:.3f}</td><td>{r['bias']:+.3f}</td>"
         f"<td>{r['dir_accuracy']*100:.0f}%</td><td>{r['n_obs']}</td></tr>"
         for _, r in met[met["objetivo"] == "ipc_m"].sort_values("horizonte_meses").iterrows()
         if r["horizonte_meses"] == 1)
+
+    glosario_html = "".join(
+        f"<div class='gt'><b>{termino}</b><p>{definicion}</p></div>"
+        for termino, definicion in glos.GLOSARIO)
 
     ETIQUETA_SUPUESTO = {"dbrl_mensual": "Δ USD/BRL mensual", "ddxy_mensual": "Δ DXY mensual"}
 
@@ -97,11 +106,27 @@ incertidumbre explícita (ver bandas de los nodos) y no constituyen asesoramient
 garantía de resultado. Metodología completa y limitaciones en la sección final y en
 <code>docs/</code> del repositorio.</div>
 
+<h2>Cómo leer este informe</h2>
+<p class="nota">Los términos técnicos (ensemble, Random Walk, MAE, backtest, banda de confianza, etc.)
+se explican la primera vez que aparecen y se repiten acá, todos juntos, para consulta rápida.</p>
+<div class="glosario">{glosario_html}</div>
+
 <h2>Resumen ejecutivo</h2>
-<p>Inflación m/m {d['ipc_mm']:.2f}% ({_fmes_abr(d['fecha_corte_ipc'])}, IPC total país base oct-2022=100, NSA),
-a/a {d['ipc_aa']:.2f}% ({d['desvio_vs_meta']:+.2f} p.p. vs. meta BCU 4,5%, rango 3-6%). Núcleo (IPC-CE) a/a
-{d['nucleo_aa']:.2f}%, tendencia 3m anualizada SA {d['nucleo_3m_anualizada_sa']:.2f}%. TC spot {d['tc_spot']:.2f}
-({_fdia(d['tc_spot_fecha'])}), TPM vigente {d['tpm']:.2f}% (IPOM {_fmes_abr(d['tpm_fecha'])}).</p>
+<p class="resumen-narrativo">
+La inflación se mantiene dentro del rango de tolerancia de la meta del BCU (3%–6% anual): el IPC subió
+{d['ipc_mm']:.2f}% en {_fmes_abr(d['fecha_corte_ipc'])} y acumula {d['ipc_aa']:.2f}% en los últimos doce
+meses, {abs(d['desvio_vs_meta']):.2f} p.p. {'por debajo' if d['desvio_vs_meta']<0 else 'por encima'} de la
+meta puntual (4,5%). El núcleo — que excluye frutas, verduras y combustibles para aislar la tendencia de
+fondo — corre en {d['nucleo_aa']:.2f}% interanual, con una dinámica de más corto plazo (3 meses,
+anualizada) de {d['nucleo_3m_anualizada_sa']:.2f}% que {'no muestra señales de aceleración' if d['nucleo_3m_anualizada_sa'] <= d['nucleo_aa'] + 0.5 else 'sugiere una aceleración a vigilar'}.
+El tipo de cambio cerró en {d['tc_spot']:.2f} UYU/USD, y la proyección del sistema para los próximos 24
+meses es prácticamente plana (ver tabla de nodos) — <b>una lectura honesta de ese resultado, no una
+casualidad</b>: en el backtest de este sistema, ningún modelo con contenido económico logró vencer de
+forma sostenida al Random Walk (el modelo que asume "sin cambio"), así que el pronóstico oficial
+refleja esa falta de señal direccional en vez de inventar una. El principal riesgo a vigilar es el
+escenario adverso (depreciación regional/global sostenida), con una probabilidad asignada por juicio del
+analista de {prob.get('adverso',0)*100:.0f}% (ver sección de Escenarios).
+</p>
 
 <h3>Tabla de nodos — pronóstico oficial (ensemble v1)</h3>
 {_tabla_nodos(d['ensemble_ipc'], d['ensemble_tc'])}
@@ -111,10 +136,10 @@ banda empírica v1 (desvío histórico de errores del backtest + dispersión ent
 ensemble), no Monte Carlo paramétrico.</p>
 
 <h2>Qué cambió</h2>
-<p class="pendiente">Esta es la primera corrida real del sistema (sesión 6): no hay una corrida anterior
-con la que comparar el pronóstico ni calcular la "sorpresa" del dato observado contra el nowcast previo.
-A partir de la próxima corrida mensual esta sección compara el dato efectivamente publicado contra lo
-que el sistema había proyectado el mes anterior.</p>
+<p class="pendiente">Esta sección todavía no está implementada: falta la comparación automática entre el
+dato efectivamente publicado y lo que el sistema había proyectado el mes anterior (la "sorpresa" del
+nowcast). La base ya guarda cada corrida mensual con su propio vintage de datos, así que el historial
+para hacer esta comparación se va acumulando corrida a corrida.</p>
 
 <h2>Inflación observada</h2>
 <div class="kpi-fila">
@@ -143,18 +168,17 @@ y <code>docs/backtest_sesion4.md</code>).</p>
 
 <h2>Política monetaria</h2>
 <p>TPM vigente: <b>{d['tpm']:.2f}%</b>, según el Informe de Política Monetaria del BCU
-({_fmes_abr(d['tpm_fecha'])}) — <span class="pendiente">único punto histórico disponible: la serie
-mensual completa de la TPM está bloqueada (ver <code>docs/manifest_fuentes.md</code>)</span>. Tasa real
-ex ante (proxy): TPM − meta BCU = <b>{d['tasa_real_ex_ante']:.2f} p.p.</b> (sustituye la expectativa de
-inflación a 12 meses de la Encuesta del BCU, no disponible, por la meta puntual — una aproximación, no
-un dato de mercado).</p>
+({_fmes_abr(d['tpm_fecha'])}) — <span class="pendiente">único punto histórico disponible por ahora: la
+serie mensual completa de todas las decisiones del Copom todavía no está cargada (ver
+<code>docs/manifest_fuentes.md</code>)</span>. Tasa real ex ante:
+<b>{d['tasa_real_ex_ante']:.2f} p.p.</b> = TPM menos {'la expectativa de inflación a 12 meses de la Encuesta del BCU (' + f"{d['expectativa_inflacion_12m']:.1f}%" + ', ' + _fmes_abr(d['expectativa_inflacion_12m_fecha']) + ')' if not d['tasa_real_ex_ante_es_proxy'] else 'la meta puntual del BCU (proxy, la Encuesta de Expectativas no está disponible este mes)'}.
+Una tasa real positiva indica una política monetaria contractiva.</p>
 
 <h2>Contexto regional y global</h2>
-<p class="pendiente">Sección parcial: no hay datos fiscales cargados (resultado del sector público) ni
-indicador de actividad (IMAE) para caracterizar la brecha de producto regional. Lo disponible: USD/BRL,
-DXY, Brent, CPI EEUU y la curva de rendimientos del Tesoro americano (2a/3m/10a), usados como exógenas
-de los modelos de las sesiones 4-5. Ampliar esta sección requiere cargar series fiscales y de actividad
-(tarea de ingesta, no de modelado).</p>
+<p>{'Brecha de producto (IMAE, filtro HP): <b>' + f"{d['brecha_producto']:+.2f}" + '</b> (' + _fmes_abr(d['brecha_producto_fecha']) + ') — ' + ('positiva, actividad por encima de su tendencia de largo plazo (presión inflacionaria desde el lado real de la economía).' if d['brecha_producto'] > 0 else 'negativa, la economía opera con capacidad ociosa (presión inflacionaria acotada desde el lado real).') if d['brecha_producto'] is not None else '<span class="pendiente">Brecha de producto todavía no disponible: hace falta más historia de IMAE cargada.</span>'}
+{('ITCR global: <b>' + f"{d['itcr_global']:.1f}" + '</b> (base 2017=100, ' + _fmes_abr(d['itcr_global_fecha']) + ').') if d['itcr_global'] is not None else '<span class="pendiente">ITCR todavía no disponible: el ingestor está en prueba contra el BCU real (ver docs/manifest_fuentes.md).</span>'}
+No hay datos fiscales cargados (resultado del sector público). Lo disponible como exógenas de los modelos:
+USD/BRL, DXY, Brent, CPI EEUU y la curva de rendimientos del Tesoro americano (2a/3m/10a).</p>
 
 <h2>Escenarios</h2>
 <p>Tres escenarios definidos como sendas de USD/BRL y DXY (no como ajustes del resultado), corridos sobre
@@ -168,14 +192,16 @@ calibrarlas de otra forma).</p>
 <li><b>De modelo:</b> ningún modelo económico (SARIMAX top-down, Phillips reducida, VAR(2)) le gana al
 benchmark random-walk/estacional en backtest — el pronóstico oficial depende de modelos simples que no
 capturan mecanismos económicos explícitos. Ver <code>docs/backtest_sesion4.md</code>.</li>
-<li><b>De datos:</b> Encuesta de Expectativas del BCU, ITCR e IMAE bloqueados o no cargados; la Phillips
-y las probabilidades de escenario son aproximaciones mientras eso no se resuelva.</li>
+<li><b>De datos:</b> ITCR e historia completa de la TPM todavía no cargados; las probabilidades de
+escenario siguen siendo juicio del analista, no una salida de un modelo calibrado con esas series
+(ver <code>docs/manifest_fuentes.md</code>). Expectativas de inflación e IMAE (brecha de producto) sí
+se incorporaron este mes.</li>
 <li><b>De mercado (escenario adverso, {prob.get('adverso',0)*100:.0f}%):</b> depreciación regional/global
 sostenida — ver señales de confirmación arriba.</li>
 </ul>
 
 <h2>Implicancias de inversión</h2>
-<p class="pendiente">Sección limitada en esta primera corrida: no hay curva de rendimientos en UI ni
+<p class="pendiente">Sección limitada por ahora: no hay curva de rendimientos en UI ni
 datos de BEVSA cargados, así que no se puede comparar el retorno esperado nominal vs. indexado a
 inflación con el rigor que el plan pide (breakeven, carry). Lectura direccional únicamente, sujeta a
 revisión cuando esas fuentes se incorporen: con inflación dentro del rango meta y una proyección de TC
@@ -192,15 +218,16 @@ objetivo inflación m/m:</p>
 <code>docs/backtest_sesion3.md</code> y <code>docs/backtest_sesion4.md</code>.</p>
 
 <h2>Apéndice metodológico</h2>
-<p><b>Datos:</b> ETL en GitHub Actions (33 series: INE, BCU, FRED), point-in-time con vintages
-(<code>docs/manifest_fuentes.md</code>). <b>EDA:</b> estacionalidad, quiebres estructurales (Chow,
-confirmados sep-2020 y oct-2022), pass-through preliminar (<code>docs/eda_sesion2.md</code>).
-<b>Benchmarks:</b> random walk, random walk estacional, media móvil 12m, naive, RW+drift
-(<code>docs/backtest_sesion3.md</code>). <b>Modelos económicos:</b> SARIMAX top-down, Phillips reducida
-(corrección de error hacia la meta BCU), VAR(2) reducido TC-inflación — todos en ventana rolling de 96
-meses, ninguno supera al benchmark (<code>docs/backtest_sesion4.md</code>). <b>Ensemble:</b> promedio
-ponderado por inverso del MAE del régimen 2022+, piso de 10% por modelo admitido
-(<code>docs/ensemble_escenarios_sesion5.md</code>).</p>
+<p><b>Datos:</b> ETL automático en GitHub Actions (INE, BCU, FRED), point-in-time con vintages — nunca
+se pisa un dato ya publicado, se agrega una revisión nueva (<code>docs/manifest_fuentes.md</code>).
+<b>EDA:</b> estacionalidad, quiebres estructurales (Chow, confirmados sep-2020 y oct-2022), pass-through
+preliminar (<code>docs/eda_sesion2.md</code>). <b>Benchmarks:</b> Random Walk, Random Walk estacional,
+media móvil 12m, naive, RW con tendencia — evaluados con un backtest honesto (ver glosario)
+(<code>docs/backtest_sesion3.md</code>). <b>Modelos económicos:</b> SARIMAX top-down, curva de Phillips
+(corrección de error hacia la meta BCU, con brecha de producto vía IMAE desde este mes), VAR(2)
+inflación-TC — todos en ventana rolling de 96 meses, ninguno supera al benchmark de forma sostenida
+(<code>docs/backtest_sesion4.md</code>). <b>Ensemble:</b> promedio ponderado por inverso del MAE del
+régimen 2022+, piso de 10% por modelo admitido (<code>docs/ensemble_escenarios_sesion5.md</code>).</p>
 
 <h2>Fuentes y fecha de corte</h2>
 <p>IPC: INE, base oct-2022=100, corte {_fmes(d['fecha_corte_ipc'])}. TC: BCU (SOAP cotizaciones), corte

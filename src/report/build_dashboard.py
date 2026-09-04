@@ -18,6 +18,7 @@ from plotly.subplots import make_subplots
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.report import datos_dashboard as dd  # noqa: E402
+from src.report import glosario as glos  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -73,7 +74,8 @@ def _fig_fan(df: pd.DataFrame, titulo: str, ylab: str, meta: float | None = None
                              line=dict(width=0), name="banda 80%", hoverinfo="skip"))
     fig.add_trace(go.Scatter(x=h, y=df["valor"], mode="lines+markers",
                              line=dict(color=S1, width=3), marker=dict(size=8),
-                             name="Ensemble v1", hovertemplate="h=%{x}m: %{y:.2f}<extra></extra>"))
+                             name=glos.nombre_modelo("ensemble_v1"),
+                             hovertemplate="h=%{x}m: %{y:.2f}<extra></extra>"))
     fig.update_layout(**LAYOUT_BASE, title=dict(text=titulo, x=0, font=dict(size=13)),
                       xaxis_title="horizonte (meses)", yaxis_title=ylab, height=380)
     return fig
@@ -84,7 +86,7 @@ def _fig_trayectoria_estacional(ensemble_ipc: pd.DataFrame, est_hist: pd.Series,
     fig = go.Figure()
     meses = [(origen + pd.DateOffset(months=h)).month for h in ensemble_ipc["horizonte_meses"]]
     fig.add_trace(go.Scatter(x=ensemble_ipc["horizonte_meses"], y=ensemble_ipc["valor"],
-                             mode="lines+markers", name="Ensemble v1 (proyectado)",
+                             mode="lines+markers", name=glos.nombre_modelo("ensemble_v1") + " (proyectado)",
                              line=dict(color=S1, width=3), marker=dict(size=8)))
     fig.add_trace(go.Scatter(x=ensemble_ipc["horizonte_meses"],
                              y=[est_hist.get(m, np.nan) for m in meses],
@@ -111,22 +113,29 @@ def _fig_heatmap(divs: pd.DataFrame) -> go.Figure:
     return fig
 
 
+# excluido de la comparacion visual de MAE (no del backtest en si, que
+# queda completo en metricas_backtest): su error es varias veces mayor
+# al resto y aplasta la escala del grafico -- el mismo motivo por el que
+# ensemble.py lo excluye del ensemble (EXCLUIDOS). Sesion 3: es sesgo
+# puro, no una prediccion competitiva.
+_MODELO_FUERA_DE_ESCALA = "bench_estacional_historica"
+
+
 def _fig_performance(errores_h1: pd.DataFrame, met: pd.DataFrame) -> go.Figure:
     fig = make_subplots(rows=1, cols=2, subplot_titles=(
-        "RW estacional: pronóstico vs. observado (h=1, backtest)",
-        "MAE por horizonte — inflación (todos los modelos)"))
+        f"{glos.nombre_modelo('bench_rw_estacional')}: pronóstico vs. observado (h=1, backtest)",
+        "MAE por horizonte — inflación (menor es mejor)"))
     fig.add_trace(go.Scatter(x=errores_h1["fecha_objetivo"], y=errores_h1["valor_observado"],
                              mode="lines", name="Observado", line=dict(color=INK2, width=1.5)), 1, 1)
     fig.add_trace(go.Scatter(x=errores_h1["fecha_objetivo"], y=errores_h1["valor_pronosticado"],
                              mode="lines", name="Pronosticado (h=1)", line=dict(color=S1, width=1.5, dash="dot")), 1, 1)
-    ipc_m = met[met["objetivo"] == "ipc_m"]
+    ipc_m = met[(met["objetivo"] == "ipc_m") & (met["modelo_id"] != _MODELO_FUERA_DE_ESCALA)]
     colores = {"bench_rw_estacional": S1, "bench_media_movil_12m": S2, "bench_naive": S3,
-              "bench_estacional_historica": S4, "phillips_reducida": S8,
-              "sarimax_topdown": "#4a3aa7", "var2_reducido": "#008300"}
+              "phillips_reducida": S8, "sarimax_topdown": "#4a3aa7", "var2_reducido": "#008300"}
     for modelo in ipc_m["modelo_id"].unique():
         s = ipc_m[ipc_m["modelo_id"] == modelo].sort_values("horizonte_meses")
         fig.add_trace(go.Scatter(x=s["horizonte_meses"], y=s["mae"], mode="lines+markers",
-                                 name=modelo.replace("bench_", ""), line=dict(color=colores.get(modelo, INK2))),
+                                 name=glos.nombre_modelo(modelo), line=dict(color=colores.get(modelo, INK2))),
                      1, 2)
     fig.update_layout(**LAYOUT_BASE, height=380, showlegend=True,
                       title=dict(text="", x=0))
@@ -143,7 +152,7 @@ def _fig_pesos(pesos: pd.DataFrame, objetivo: str, titulo: str) -> go.Figure:
     for modelo in sorted(sub["modelo_id"].unique()):
         s = sub[sub["modelo_id"] == modelo].sort_values("horizonte_meses")
         fig.add_trace(go.Scatter(x=s["horizonte_meses"], y=s["peso_ensemble"], mode="lines",
-                                 stackgroup="uno", name=modelo.replace("bench_", ""),
+                                 stackgroup="uno", name=glos.nombre_modelo(modelo),
                                  line=dict(width=0.5, color=colores.get(modelo, INK2))))
     base = {**LAYOUT_BASE, "yaxis": {**LAYOUT_BASE["yaxis"], "range": [0, 1]}}
     fig.update_layout(**base, title=dict(text=titulo, x=0, font=dict(size=13)),
@@ -188,29 +197,52 @@ def construir(mes: str | None = None) -> Path:
     d = dd.cargar()
 
     kpis = []
-    kpis.append(_kpi_card("Inflación m/m",
-        f"{d['ipc_mm']:.2f}%", f"IPC total país, {_fmes_abr(d['fecha_corte_ipc'])}, NSA. Sorpresa: N/D (primera corrida)"))
+    kpis.append(_kpi_card("Inflación del mes (m/m)",
+        f"{d['ipc_mm']:.2f}%", f"IPC total país, dato de {_fmes_abr(d['fecha_corte_ipc'])}, sin desestacionalizar (NSA)."))
     color_meta = GOOD if abs(d["desvio_vs_meta"]) <= 1.5 else WARN
-    kpis.append(_kpi_card("Inflación a/a vs. meta",
-        f"{d['ipc_aa']:.2f}%", f"Meta BCU 4,5% (rango 3-6%). Desvío: {d['desvio_vs_meta']:+.2f} p.p.", color_meta))
-    kpis.append(_kpi_card("Núcleo (IPC-CE)",
-        f"{d['nucleo_aa']:.2f}% a/a", f"3m anualizada SA (STL): {d['nucleo_3m_anualizada_sa']:.2f}%"))
+    kpis.append(_kpi_card("Inflación interanual (a/a) vs. meta",
+        f"{d['ipc_aa']:.2f}%",
+        f"La meta del BCU es 4,5% anual (rango tolerado 3–6%). Hoy está "
+        f"{abs(d['desvio_vs_meta']):.2f} p.p. {'por debajo' if d['desvio_vs_meta']<0 else 'por encima'}.",
+        color_meta))
+    kpis.append(_kpi_card("Núcleo (excluye precios volátiles)",
+        f"{d['nucleo_aa']:.2f}% a/a",
+        f"Tendencia de fondo (últimos 3 meses, anualizada y desestacionalizada): {d['nucleo_3m_anualizada_sa']:.2f}%."))
     kpis.append(_kpi_card("Nowcast del mes en curso",
-        f"{d['nowcast_mm']:.2f}%", f"Ensemble v1, h=1 desde {_fmes_abr(d['origen_pronostico'])}"))
-    kpis.append(_kpi_card("TC spot",
-        f"{d['tc_spot']:.2f}", f"{_fdia(d['tc_spot_fecha'])}. Var. m/m {d['tc_var_mm']:+.2f}% · a/a {d['tc_var_aa']:+.2f}%"))
-    kpis.append(_kpi_card("ITCR (desvío vs. media 5a)",
-        "N/D", "Bloqueado: portal del BCU requiere JavaScript (ver manifest_fuentes.md)", INK2))
-    kpis.append(_kpi_card("Break-even 12m (BEVSA)",
-        "N/D", "Fuera de alcance v1 (plan, decisión #2)", INK2))
+        f"{d['nowcast_mm']:.2f}%",
+        f"Lo que el {glos.nombre_modelo('ensemble_v1').lower()} estima para "
+        f"{_fmes_abr(d['origen_pronostico'] + pd.DateOffset(months=1))}, antes de que el INE publique el dato oficial."))
+    kpis.append(_kpi_card("Tipo de cambio (spot)",
+        f"{d['tc_spot']:.2f}",
+        f"UYU por USD, {_fdia(d['tc_spot_fecha'])}. Variación del mes {d['tc_var_mm']:+.2f}% · del año {d['tc_var_aa']:+.2f}%."))
+    if d["itcr_global"] is not None:
+        kpis.append(_kpi_card("ITCR global (competitividad cambiaria)",
+            f"{d['itcr_global']:.1f}", f"Base 2017=100, dato de {_fmes_abr(d['itcr_global_fecha'])}. Por debajo de 100 sugiere el peso \"caro\" en términos reales."))
+    else:
+        kpis.append(_kpi_card("ITCR global (competitividad cambiaria)",
+            "N/D", "Ingestor en prueba contra el BCU real (ver docs/manifest_fuentes.md) — todavía sin confirmar.", INK2))
+    if d["brecha_producto"] is not None:
+        color_brecha = WARN if abs(d["brecha_producto"]) > 2 else INK
+        kpis.append(_kpi_card("Brecha de producto (IMAE)",
+            f"{d['brecha_producto']:+.2f}",
+            f"Dato de {_fmes_abr(d['brecha_producto_fecha'])}. Positiva = actividad por encima de su tendencia "
+            f"(presión inflacionaria); negativa = capacidad ociosa.", color_brecha))
+    else:
+        kpis.append(_kpi_card("Brecha de producto (IMAE)", "N/D", "Todavía no hay suficiente historia de IMAE cargada.", INK2))
+    detalle_tasa = (f"TPM {d['tpm']:.2f}% ({_fmes_abr(d['tpm_fecha'])}) menos la expectativa de inflación "
+                    f"a 12 meses de la Encuesta del BCU ({d['expectativa_inflacion_12m']:.1f}%, "
+                    f"{_fmes_abr(d['expectativa_inflacion_12m_fecha'])})."
+                    if not d["tasa_real_ex_ante_es_proxy"] else
+                    f"TPM {d['tpm']:.2f}% ({_fmes_abr(d['tpm_fecha'])}) menos la meta del BCU (4,5%) — "
+                    f"proxy: la Encuesta de Expectativas no está disponible este mes.")
     kpis.append(_kpi_card("Tasa real ex ante",
         f"{d['tasa_real_ex_ante']:.2f} p.p." if d["tasa_real_ex_ante"] is not None else "N/D",
-        f"TPM {d['tpm']:.2f}% ({_fmes_abr(d['tpm_fecha'])}, IPOM) − meta 4,5% (proxy de Eπ12m, encuesta bloqueada)"))
+        detalle_tasa))
     prob_adverso = d["escenarios"].set_index("escenario_id")["probabilidad"].get("adverso", np.nan)
-    kpis.append(_kpi_card("Prob. escenario adverso",
-        f"{prob_adverso*100:.0f}%", "Juicio documentado (config/scenarios.yaml)", WARN))
+    kpis.append(_kpi_card("Probabilidad del escenario adverso",
+        f"{prob_adverso*100:.0f}%", "Juicio del analista, documentado en config/scenarios.yaml (no sale de un modelo estadístico).", WARN))
     color_sem, txt_sem = _semaforo(d["alertas_criticas"], d["alertas_warning"])
-    kpis.append(_kpi_card("Calidad de datos", "●", txt_sem, color_sem))
+    kpis.append(_kpi_card("Calidad de los datos de esta corrida", "●", txt_sem, color_sem))
 
     fig_fan_ipc = _fig_fan(d["ensemble_ipc"], "Inflación m/m — ensemble v1 (nodos 1/6/12/24)",
                           "inflación m/m (%)", meta=None, rango=None)
@@ -229,7 +261,11 @@ def construir(mes: str | None = None) -> Path:
     tabla_tc.columns = ["horizonte_meses", "tc_prom", "tc_li_80", "tc_ls_80"]
     tabla_final = tabla.merge(tabla_tc, on="horizonte_meses")
     tabla_final.to_csv(out_dir / "forecasts.csv", index=False)
-    tabla_html = tabla_final.round(3).to_html(index=False, classes="tabla-central", border=0)
+    tabla_legible = tabla_final.round(3).rename(columns={
+        "horizonte_meses": "Horizonte (meses)", "fecha_objetivo": "Mes",
+        "inflacion_mm": "Inflación m/m (%)", "li_80": "Piso banda 80%", "ls_80": "Techo banda 80%",
+        "tc_prom": "TC promedio", "tc_li_80": "TC piso 80%", "tc_ls_80": "TC techo 80%"})
+    tabla_html = tabla_legible.to_html(index=False, classes="tabla-central", border=0)
 
     figs_html = {}
     primero = True
@@ -245,6 +281,10 @@ def construir(mes: str | None = None) -> Path:
         f"<tr><td>{r['nombre']}</td><td>{r['probabilidad']*100:.0f}%</td>"
         f"<td><pre>{r['supuestos']}</pre></td><td><pre>{r['senales_monitoreo']}</pre></td></tr>"
         for _, r in d["escenarios"].iterrows())
+
+    glosario_html = "".join(
+        f"<div class='gterm'><b>{termino}</b><p>{definicion}</p></div>"
+        for termino, definicion in glos.GLOSARIO)
 
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
@@ -269,28 +309,61 @@ def construir(mes: str | None = None) -> Path:
   table.escenarios pre {{ white-space:pre-wrap; font-family:inherit; font-size:11px; color:{INK2}; margin:0; }}
   a.descarga {{ color:{S1}; text-decoration:none; font-size:13px; }}
   .footer {{ color:{INK2}; font-size:11px; margin-top:40px; border-top:1px solid {GRID}; padding-top:12px; }}
+  .caption {{ color:{INK2}; font-size:12px; line-height:1.5; margin:6px 2px 18px; }}
+  .h2-intro {{ color:{INK2}; font-size:13px; line-height:1.5; margin:-4px 0 14px; max-width:900px; }}
+  details.glosario {{ border:1px solid {GRID}; border-radius:10px; background:#fff; margin-bottom:28px; }}
+  details.glosario summary {{ cursor:pointer; padding:14px 16px; font-size:14px; font-weight:600;
+                              list-style:none; display:flex; align-items:center; gap:8px; }}
+  details.glosario summary::before {{ content:"▸"; color:{S1}; font-size:12px; }}
+  details.glosario[open] summary::before {{ content:"▾"; }}
+  details.glosario summary::-webkit-details-marker {{ display:none; }}
+  .glosario-grid {{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px 24px;
+                    padding:0 16px 18px; }}
+  .gterm {{ font-size:12.5px; line-height:1.5; }}
+  .gterm b {{ color:{INK}; }}
+  .gterm p {{ margin:2px 0 0; color:{INK2}; }}
 </style></head>
 <body>
   <h1>Inflación y Tipo de Cambio — Uruguay</h1>
   <div class="subtitulo">Corrida {mes} · IPC al {_fmes(d['fecha_corte_ipc'])} · TC al {_fdia(d['tc_spot_fecha'])} ·
     Origen del pronóstico: {_fmes(d['origen_pronostico'])}</div>
 
+  <details class="glosario">
+    <summary>¿Cómo leer este dashboard? — glosario de términos</summary>
+    <div class="glosario-grid">{glosario_html}</div>
+  </details>
+
   <div class="kpis">{"".join(kpis)}</div>
 
-  <h2>Proyección — ensemble v1 (pronóstico oficial)</h2>
+  <h2>Proyección: ¿qué espera el sistema para los próximos meses?</h2>
+  <p class="h2-intro">La línea sólida es el {glos.nombre_modelo('ensemble_v1').lower()} — la combinación
+    de modelos que mejor funcionó en el backtest (ver glosario). Las bandas de color no son un adorno:
+    son el rango de incertidumbre real a cada horizonte, más ancho cuanto más lejos se proyecta.</p>
   <div class="fila">
     <div class="panel">{figs_html['fan_ipc']}</div>
     <div class="panel">{figs_html['fan_tc']}</div>
   </div>
   <div class="panel">{figs_html['trayectoria']}</div>
+  <p class="caption">Este último gráfico compara la trayectoria proyectada contra el promedio histórico
+    de cada mes calendario desde 2017 — sirve para distinguir un salto que es pura estacionalidad
+    (ej. ajustes de tarifas que siempre ocurren en enero) de una aceleración genuina.</p>
 
-  <h2>Composición del ensemble</h2>
+  <h2>Composición del pronóstico oficial</h2>
+  <p class="h2-intro">Cada franja de color es el peso (0 a 100%) que aporta un modelo al ensemble en
+    ese horizonte. <b>Hoy el 100% del peso está en los benchmarks</b> (ver glosario) — ningún modelo con
+    contenido económico (Phillips, SARIMAX, VAR) le ganó de forma significativa en el backtest, así que
+    el sistema no les da peso en vez de fingir que aportan algo que no está probado. Ver la sección de
+    Performance más abajo.</p>
   <div class="fila">
     <div class="panel">{figs_html['pesos_ipc']}</div>
     <div class="panel">{figs_html['pesos_tc']}</div>
   </div>
 
-  <h2>Escenarios</h2>
+  <h2>Escenarios: ¿y si el contexto externo es distinto?</h2>
+  <p class="h2-intro">No son ajustes manuales del resultado: es el mismo modelo (VAR(2) inflación-TC)
+    corriendo tres veces, cada vez con una trayectoria distinta de dólar/real brasileño y dólar global.
+    La probabilidad de cada uno es un juicio documentado del analista, no una salida estadística del
+    modelo — se explicita así para no confundir un supuesto con un resultado.</p>
   <div class="panel">{figs_html['escenarios']}</div>
   <div class="panel">
     <table class="escenarios">
@@ -300,9 +373,18 @@ def construir(mes: str | None = None) -> Path:
   </div>
 
   <h2>Divisiones del IPC</h2>
+  <p class="h2-intro">Variación mensual de cada una de las 13 divisiones del IPC, últimos 24 meses.
+    Colores más intensos = variaciones más grandes ese mes, positivas (naranja) o negativas (verde).</p>
   <div class="panel">{figs_html['heatmap']}</div>
 
-  <h2>Performance del modelo (backtest, sesiones 3-4)</h2>
+  <h2>Performance del modelo: ¿qué tan bien funcionó en el pasado?</h2>
+  <p class="h2-intro">Panel izquierdo: lo que el {glos.nombre_modelo('bench_rw_estacional').lower()}
+    pronosticaba un mes antes, comparado contra lo que realmente pasó — si las dos líneas se despegan
+    mucho, el modelo viene fallando. Panel derecho: el error promedio (MAE, ver glosario) de cada modelo
+    por horizonte — la línea más abajo es la más precisa históricamente. Esta es la prueba que decide
+    cuánto peso recibe cada modelo en el ensemble (se excluye del gráfico el
+    «{glos.nombre_modelo('bench_estacional_historica').lower()}»: su error es varias veces mayor al
+    resto y aplastaría la escala — por eso tampoco recibe peso en el ensemble).</p>
   <div class="panel">{figs_html['performance']}</div>
 
   <h2>Tabla central de pronósticos</h2>

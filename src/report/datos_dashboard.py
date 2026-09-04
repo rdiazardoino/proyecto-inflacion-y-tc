@@ -65,24 +65,55 @@ def cargar(con=None) -> dict:
     d["tc_var_mm"] = float((tc_prom / tc_prom.shift(1) - 1).iloc[-1] * 100)
     d["tc_var_aa"] = float((tc_prom / tc_prom.shift(12) - 1).iloc[-1] * 100)
 
-    # ---- TPM y tasa real ex ante (proxy: meta BCU en vez de Eπ12m, que
-    # esta bloqueada -- documentado, no inventado)
+    # ---- TPM y tasa real ex ante. Desde el 4-sep-2026 la Encuesta de
+    # Expectativas del BCU ya esta cargada (expectativas_inflacion_12m) --
+    # se usa esa en vez de la meta como proxy de Eπ12m. Si por algun motivo
+    # faltara (ej. el ETL no pudo actualizarla ese mes), cae a la meta con
+    # la limitacion marcada explicitamente.
     tpm = db.serie(con, "tpm_bcu")
     d["tpm"] = float(tpm.iloc[-1]) if len(tpm) else None
     d["tpm_fecha"] = tpm.index[-1] if len(tpm) else None
-    d["tasa_real_ex_ante"] = (d["tpm"] - META_ANUAL) if d["tpm"] is not None else None
+    exp12 = db.serie(con, "expectativas_inflacion_12m")
+    d["expectativa_inflacion_12m"] = float(exp12.iloc[-1]) if len(exp12) else None
+    d["expectativa_inflacion_12m_fecha"] = exp12.index[-1] if len(exp12) else None
+    d["tasa_real_ex_ante_es_proxy"] = d["expectativa_inflacion_12m"] is None
+    ancla_inflacion = d["expectativa_inflacion_12m"] if d["expectativa_inflacion_12m"] is not None else META_ANUAL
+    d["tasa_real_ex_ante"] = (d["tpm"] - ancla_inflacion) if d["tpm"] is not None else None
+
+    # ---- IMAE / brecha de producto (filtro HP, ver src/models/phillips.py
+    # -- misma logica, calculada aca solo para mostrar el ultimo valor)
+    imae = db.serie(con, "imae").asfreq("MS")
+    if len(imae.dropna()) >= 24:
+        from statsmodels.tsa.filters.hp_filter import hpfilter
+        ciclo, _ = hpfilter(imae.dropna(), lamb=14400)
+        d["brecha_producto"] = float(ciclo.iloc[-1])
+        d["brecha_producto_fecha"] = ciclo.index[-1]
+    else:
+        d["brecha_producto"] = None
+        d["brecha_producto_fecha"] = None
+
+    # ---- ITCR (en prueba desde el 4-sep-2026, ver docs/manifest_fuentes.md
+    # -- puede venir vacio si el ingestor todavia no confirmo contra el BCU)
+    itcr = db.serie(con, "itcr_global")
+    d["itcr_global"] = float(itcr.iloc[-1]) if len(itcr) else None
+    d["itcr_global_fecha"] = itcr.index[-1] if len(itcr) else None
 
     # ---- alertas (semaforo)
     al = pd.read_sql("SELECT severidad, COUNT(*) n FROM alertas WHERE resuelta=0 GROUP BY severidad", con)
     d["alertas_criticas"] = int(al.set_index("severidad")["n"].get("critica", 0))
     d["alertas_warning"] = int(al.set_index("severidad")["n"].get("warning", 0))
 
-    # ---- ensemble (pronostico oficial)
+    # ---- ensemble (pronostico oficial). `pronosticos` es append-only entre
+    # vintages (queda el historial de cada corrida mensual) -- hay que
+    # quedarse solo con el ultimo vintage_datos, si no se duplican filas por
+    # horizonte_meses cuando ya corrio mas de un mes.
+    ultimo_vintage = pd.read_sql(
+        "SELECT MAX(vintage_datos) v FROM pronosticos WHERE modelo_id='ensemble_v1'", con)["v"].iloc[0]
     for objetivo, clave in [("ipc_m", "ensemble_ipc"), ("tc_prom", "ensemble_tc")]:
         df = pd.read_sql(
             "SELECT horizonte_meses, fecha_objetivo, valor, li_80, ls_80, li_95, ls_95 "
             "FROM pronosticos WHERE modelo_id='ensemble_v1' AND objetivo=? AND escenario='base' "
-            "ORDER BY horizonte_meses", con, params=(objetivo,))
+            "AND vintage_datos=? ORDER BY horizonte_meses", con, params=(objetivo, ultimo_vintage))
         d[clave] = df
 
     d["origen_pronostico"] = (pd.to_datetime(d["ensemble_ipc"]["fecha_objetivo"].iloc[0])
@@ -90,20 +121,23 @@ def cargar(con=None) -> dict:
                               if len(d["ensemble_ipc"]) else None)
     d["nowcast_mm"] = float(d["ensemble_ipc"].set_index("horizonte_meses")["valor"].get(1, np.nan))
 
-    # ---- pesos del ensemble
+    # ---- pesos del ensemble (mismo criterio: solo el ultimo vintage)
     pesos = pd.read_sql(
         "SELECT objetivo, modelo_id, horizonte_meses, peso_ensemble FROM pronosticos "
-        "WHERE modelo_id != 'ensemble_v1' AND escenario='base' AND peso_ensemble IS NOT NULL",
-        con)
+        "WHERE modelo_id != 'ensemble_v1' AND escenario='base' AND peso_ensemble IS NOT NULL "
+        "AND vintage_datos=?", con, params=(ultimo_vintage,))
     d["pesos_ensemble"] = pesos.drop_duplicates(["objetivo", "modelo_id", "horizonte_meses"])
 
     # ---- escenarios
     d["escenarios"] = pd.read_sql(
         "SELECT escenario_id, nombre, probabilidad, supuestos, senales_monitoreo FROM escenarios "
         "WHERE fecha_generacion = (SELECT MAX(fecha_generacion) FROM escenarios)", con)
+    ultimo_vintage_esc = pd.read_sql(
+        "SELECT MAX(vintage_datos) v FROM pronosticos WHERE modelo_id='var2_reducido'", con)["v"].iloc[0]
     esc_pron = pd.read_sql(
         "SELECT escenario, objetivo, horizonte_meses, fecha_objetivo, valor FROM pronosticos "
-        "WHERE modelo_id='var2_reducido' ORDER BY objetivo, escenario, horizonte_meses", con)
+        "WHERE modelo_id='var2_reducido' AND vintage_datos=? "
+        "ORDER BY objetivo, escenario, horizonte_meses", con, params=(ultimo_vintage_esc,))
     d["escenarios_pronostico"] = esc_pron
 
     # ---- backtest / performance (sesiones 3-4)
