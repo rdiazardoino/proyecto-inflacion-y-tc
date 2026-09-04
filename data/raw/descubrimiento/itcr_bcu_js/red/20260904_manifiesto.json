@@ -18,22 +18,22 @@
   "bytes": 845
  },
  {
-  "archivo": "20260904_002_aui.css",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-liferay-theme/css/aui.css?browserId=other&themeId=o3theme_WAR_o3liferaytheme&minifierType=css&languageId=en_US&b=6205&t=1787122907825",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "text/css",
-  "status": 200,
-  "bytes": 168123
- },
- {
-  "archivo": "20260904_003_theme.css",
+  "archivo": "20260904_002_theme.css",
   "url": "https://ganges.bcu.gub.uy:8443/eportal/o3-parts-html-common-resources/ids-theme-v6/theme.css?cache=false",
   "metodo": "GET",
   "post_data": null,
   "content_type": "text/css",
   "status": 200,
   "bytes": 25526
+ },
+ {
+  "archivo": "20260904_003_aui.css",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-liferay-theme/css/aui.css?browserId=other&themeId=o3theme_WAR_o3liferaytheme&minifierType=css&languageId=en_US&b=6205&t=1787122907825",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "text/css",
+  "status": 200,
+  "bytes": 168123
  },
  {
   "archivo": "20260904_004_fontello-embedded.css",
@@ -45,22 +45,22 @@
   "bytes": 42963
  },
  {
-  "archivo": "20260904_005_theme-classic-all_2.css",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/o3-parts-html-common-resources/ext-v6/theme-classic-all_2.css",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "text/css",
-  "status": 200,
-  "bytes": 1046
- },
- {
-  "archivo": "20260904_006_main.css",
+  "archivo": "20260904_005_main.css",
   "url": "https://ganges.bcu.gub.uy:8443/notifications-portlet/notifications/css/main.css?browserId=other&themeId=o3theme_WAR_o3liferaytheme&minifierType=css&languageId=en_US&b=6205&t=1787122890702",
   "metodo": "GET",
   "post_data": null,
   "content_type": "text/css",
   "status": 200,
   "bytes": 17814
+ },
+ {
+  "archivo": "20260904_006_theme-classic-all_2.css",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/o3-parts-html-common-resources/ext-v6/theme-classic-all_2.css",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "text/css",
+  "status": 200,
+  "bytes": 1046
  },
  {
   "archivo": "20260904_007_main.css",
@@ -81,16 +81,7 @@
   "bytes": 683
  },
  {
-  "archivo": "20260904_009_theme-classic-all_1.css",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/o3-parts-html-common-resources/ext-v6/theme-classic-all_1.css",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "text/css",
-  "status": 200,
-  "bytes": 381288
- },
- {
-  "archivo": "20260904_010_main.css",
+  "archivo": "20260904_009_main.css",
   "url": "https://ganges.bcu.gub.uy:8443/o3-liferay-theme/css/main.css?browserId=other&themeId=o3theme_WAR_o3liferaytheme&minifierType=css&languageId=en_US&b=6205&t=1787122907825",
   "metodo": "GET",
   "post_data": null,
@@ -99,7 +90,7 @@
   "bytes": 124611
  },
  {
-  "archivo": "20260904_011_O3.chart.series.sprite.Line.js",
+  "archivo": "20260904_010_O3.chart.series.sprite.Line.js",
   "url": "https://ganges.bcu.gub.uy:8443/eportal/o3-parts-html-common-resources/ext-v6/O3.chart.series.sprite.Line.js?cache=false",
   "metodo": "GET",
   "post_data": null,
@@ -108,13 +99,22 @@
   "bytes": 1047
  },
  {
-  "archivo": "20260904_012_base64.min.js",
+  "archivo": "20260904_011_base64.min.js",
   "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/js/base64.min.js?browserId=other&minifierType=js&languageId=en_US&b=6205&t=1787122965243",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
   "status": 200,
   "bytes": 3731
+ },
+ {
+  "archivo": "20260904_012_theme-classic-all_1.css",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/o3-parts-html-common-resources/ext-v6/theme-classic-all_1.css",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "text/css",
+  "status": 200,
+  "bytes": 381288
  },
  {
   "archivo": "20260904_013_configs.js",
@@ -135,22 +135,22 @@
   "bytes": 338821
  },
  {
-  "archivo": "20260904_015_httpReq.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/httpReq.js?browserId=other&minifierType=js&languageId=en_US&b=6205&t=1787122965243",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "application/javascript",
-  "status": 200,
-  "bytes": 3672
- },
- {
-  "archivo": "20260904_016_barebone.jsp",
+  "archivo": "20260904_015_barebone.jsp",
   "url": "https://ganges.bcu.gub.uy:8443/eportal/html/js/barebone.jsp?browserId=other&themeId=o3theme_WAR_o3liferaytheme&colorSchemeId=03&minifierType=js&minifierBundleId=javascript.barebone.files&languageId=en_US&b=6205&t=1452623414000",
   "metodo": "GET",
   "post_data": null,
   "content_type": "text/javascript",
   "status": 200,
   "bytes": 412452
+ },
+ {
+  "archivo": "20260904_016_httpReq.js",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/httpReq.js?browserId=other&minifierType=js&languageId=en_US&b=6205&t=1787122965243",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "application/javascript",
+  "status": 200,
+  "bytes": 3672
  },
  {
   "archivo": "20260904_017_TimeoutHandler.js",
@@ -171,7 +171,16 @@
   "bytes": 3591
  },
  {
-  "archivo": "20260904_019_xml2json.js",
+  "archivo": "20260904_019_jquery-1.9.1.min.js",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/js/jquery-1.9.1.min.js?browserId=other&minifierType=js&languageId=en_US&b=6205&t=1787122965243",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "application/javascript",
+  "status": 200,
+  "bytes": 92629
+ },
+ {
+  "archivo": "20260904_020_xml2json.js",
   "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/js/xml2json.js?browserId=other&minifierType=js&languageId=en_US&b=6205&t=1787122965243",
   "metodo": "GET",
   "post_data": null,
@@ -180,7 +189,7 @@
   "bytes": 16427
  },
  {
-  "archivo": "20260904_020_O3HTMLCommunicationBus.js",
+  "archivo": "20260904_021_O3HTMLCommunicationBus.js",
   "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/js/O3HTMLCommunicationBus.js?browserId=other&minifierType=js&languageId=en_US&b=6205&t=1787122965243",
   "metodo": "GET",
   "post_data": null,
@@ -189,22 +198,13 @@
   "bytes": 10399
  },
  {
-  "archivo": "20260904_021_main.js",
+  "archivo": "20260904_022_main.js",
   "url": "https://ganges.bcu.gub.uy:8443/notifications-portlet/notifications/js/main.js?browserId=other&minifierType=js&languageId=en_US&b=6205&t=1787122890702",
   "metodo": "GET",
   "post_data": null,
   "content_type": "text/javascript",
   "status": 200,
   "bytes": 10787
- },
- {
-  "archivo": "20260904_022_jquery-1.9.1.min.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/js/jquery-1.9.1.min.js?browserId=other&minifierType=js&languageId=en_US&b=6205&t=1787122965243",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "application/javascript",
-  "status": 200,
-  "bytes": 92629
  },
  {
   "archivo": "20260904_023_main.js",
@@ -298,7 +298,7 @@
  },
  {
   "archivo": "20260904_033_render_portlet.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/c/portal/render_portlet?p_l_id=25001&p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ&p_p_lifecycle=0&p_t_lifecycle=0&p_p_state=normal&p_p_mode=view&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=1&p_p_col_count=4&p_p_isolated=1&currentURL=%2Feportal%2Fweb%2Fguest%2Ftcre",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/c/portal/render_portlet?p_l_id=25001&p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn&p_p_lifecycle=0&p_t_lifecycle=0&p_p_state=normal&p_p_mode=view&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=2&p_p_col_count=4&p_p_isolated=1&currentURL=%2Feportal%2Fweb%2Fguest%2Ftcre",
   "metodo": "POST",
   "post_data": null,
   "content_type": "text/html;charset=utf-8",
@@ -316,7 +316,7 @@
  },
  {
   "archivo": "20260904_035_render_portlet.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/c/portal/render_portlet?p_l_id=25001&p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn&p_p_lifecycle=0&p_t_lifecycle=0&p_p_state=normal&p_p_mode=view&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=2&p_p_col_count=4&p_p_isolated=1&currentURL=%2Feportal%2Fweb%2Fguest%2Ftcre",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/c/portal/render_portlet?p_l_id=25001&p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ&p_p_lifecycle=0&p_t_lifecycle=0&p_p_state=normal&p_p_mode=view&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=1&p_p_col_count=4&p_p_isolated=1&currentURL=%2Feportal%2Fweb%2Fguest%2Ftcre",
   "metodo": "POST",
   "post_data": null,
   "content_type": "text/html;charset=utf-8",
@@ -352,7 +352,7 @@
  },
  {
   "archivo": "20260904_039_ViewDashlet.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ViewDashlet.js?_dc=1788526491259",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ViewDashlet.js?_dc=1788527088677",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -361,7 +361,7 @@
  },
  {
   "archivo": "20260904_040_ViewDashletViewModel.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ViewDashletViewModel.js?_dc=1788526491427",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ViewDashletViewModel.js?_dc=1788527088886",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -370,7 +370,7 @@
  },
  {
   "archivo": "20260904_041_ViewDashletViewController.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ViewDashletViewController.js?_dc=1788526491427",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ViewDashletViewController.js?_dc=1788527088886",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -379,7 +379,7 @@
  },
  {
   "archivo": "20260904_042_ContextMenu.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ContextMenu.js?_dc=1788526491427",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ContextMenu.js?_dc=1788527088886",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -388,7 +388,7 @@
  },
  {
   "archivo": "20260904_043_ContextMenuViewModel.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ContextMenuViewModel.js?_dc=1788526491954",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ContextMenuViewModel.js?_dc=1788527089510",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -397,7 +397,7 @@
  },
  {
   "archivo": "20260904_044_ContextMenuViewController.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ContextMenuViewController.js?_dc=1788526491954",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/ContextMenuViewController.js?_dc=1788527089510",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -406,7 +406,7 @@
  },
  {
   "archivo": "20260904_045_Translator.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/controller/Translator.js?_dc=1788526491427",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/controller/Translator.js?_dc=1788527088886",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -415,7 +415,7 @@
  },
  {
   "archivo": "20260904_046_StorageManager.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/controller/StorageManager.js?_dc=1788526491427",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/controller/StorageManager.js?_dc=1788527088886",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -424,7 +424,7 @@
  },
  {
   "archivo": "20260904_047_ChartBuilder.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/ChartBuilder.js?_dc=1788526491427",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/ChartBuilder.js?_dc=1788527088886",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -433,7 +433,7 @@
  },
  {
   "archivo": "20260904_048_SpecAnalyzer.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Lib/SpecAnalyzer.js?_dc=1788526492868",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Lib/SpecAnalyzer.js?_dc=1788527090496",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -442,7 +442,7 @@
  },
  {
   "archivo": "20260904_049_ViewUtils.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Lib/ViewUtils.js?_dc=1788526493042",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Lib/ViewUtils.js?_dc=1788527090696",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -451,7 +451,7 @@
  },
  {
   "archivo": "20260904_050_StoreModel.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/store/StoreModel.js?_dc=1788526493043",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/store/StoreModel.js?_dc=1788527090696",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -460,7 +460,7 @@
  },
  {
   "archivo": "20260904_051_Utils.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/controller/Utils.js?_dc=1788526493043",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/controller/Utils.js?_dc=1788527090696",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -469,7 +469,7 @@
  },
  {
   "archivo": "20260904_052_Renderer.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Lib/Renderer.js?_dc=1788526493043",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Lib/Renderer.js?_dc=1788527090696",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -478,7 +478,7 @@
  },
  {
   "archivo": "20260904_053_SerieBuilder.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Lib/SerieBuilder.js?_dc=1788526493043",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Lib/SerieBuilder.js?_dc=1788527090696",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -487,7 +487,7 @@
  },
  {
   "archivo": "20260904_054_PieLayout.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Layout/PieLayout.js?_dc=1788526493043",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Layout/PieLayout.js?_dc=1788527090696",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -496,7 +496,7 @@
  },
  {
   "archivo": "20260904_055_PieLayoutViewModel.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Layout/PieLayoutViewModel.js?_dc=1788526494061",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Layout/PieLayoutViewModel.js?_dc=1788527091931",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -505,7 +505,7 @@
  },
  {
   "archivo": "20260904_056_Main.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Layout/Main.js?_dc=1788526493043",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Layout/Main.js?_dc=1788527090696",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -514,7 +514,7 @@
  },
  {
   "archivo": "20260904_057_MainViewModel.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Layout/MainViewModel.js?_dc=1788526494403",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ChartHTML/app/view/Layout/MainViewModel.js?_dc=1788527092319",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -523,7 +523,7 @@
  },
  {
   "archivo": "20260904_058_RestServices.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/store/Rest/RestServices.js?_dc=1788526492868",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/store/Rest/RestServices.js?_dc=1788527090496",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -532,7 +532,7 @@
  },
  {
   "archivo": "20260904_059_ExtensionManager.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/store/Rest/ExtensionManager.js?_dc=1788526494751",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/DashletHTML/app/store/Rest/ExtensionManager.js?_dc=1788527092740",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -541,7 +541,7 @@
  },
  {
   "archivo": "20260904_060_GridBuilder.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GridBuilder.js?_dc=1788526491427",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GridBuilder.js?_dc=1788527088886",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -550,7 +550,7 @@
  },
  {
   "archivo": "20260904_061_AdvancedStore.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/store/AdvancedStore.js?_dc=1788526495099",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/store/AdvancedStore.js?_dc=1788527093165",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -559,7 +559,7 @@
  },
  {
   "archivo": "20260904_062_GridAdvanced.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GridAdvanced.js?_dc=1788526495099",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GridAdvanced.js?_dc=1788527093165",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -568,7 +568,7 @@
  },
  {
   "archivo": "20260904_063_CSSUtils.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/CSSUtils.js?_dc=1788526495438",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/CSSUtils.js?_dc=1788527093576",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -577,7 +577,7 @@
  },
  {
   "archivo": "20260904_064_GaugeUtils.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GaugeUtils.js?_dc=1788526495438",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GaugeUtils.js?_dc=1788527093576",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -586,7 +586,7 @@
  },
  {
   "archivo": "20260904_065_GridList.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GridList.js?_dc=1788526495099",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GridList.js?_dc=1788527093165",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -595,7 +595,7 @@
  },
  {
   "archivo": "20260904_066_ListStore.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/store/ListStore.js?_dc=1788526495099",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/store/ListStore.js?_dc=1788527093165",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -604,7 +604,7 @@
  },
  {
   "archivo": "20260904_067_OlapStore.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/store/OlapStore.js?_dc=1788526495099",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/store/OlapStore.js?_dc=1788527093165",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -613,7 +613,7 @@
  },
  {
   "archivo": "20260904_068_GridOlap.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GridOlap.js?_dc=1788526495099",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/view/GridOlap.js?_dc=1788527093165",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -622,7 +622,7 @@
  },
  {
   "archivo": "20260904_069_StoreModel.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/model/StoreModel.js?_dc=1788526495099",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/GridHTML/app/model/StoreModel.js?_dc=1788527093165",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -631,7 +631,7 @@
  },
  {
   "archivo": "20260904_070_Utils.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/Utils.js?_dc=1788526496648",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/ViewDashlet/app/view/Utils.js?_dc=1788527094983",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -669,7 +669,7 @@
   "archivo": "20260904_074_tcre.json",
   "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ViewPortlet_WAR_o3partsweb_INSTANCE_l9hzT10K1Xaf&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=processCommands&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-3&p_p_col_count=1&_O3ViewPortlet_WAR_o3partsweb_INSTANCE_l9hzT10K1Xaf_resource-name=processCommands",
   "metodo": "POST",
-  "post_data": "senchapost=true&queryCommand=%3CqueryCommands%20xmlns%3D'http%3A%2F%2Fns.ideasoft.biz%2Fo3bi%2Fschema%2FQueryCommands%2F2011-01'%20xmlns%3Axsi%3D'http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance'%3E%3CqueryCommand%20request%3D'VIEW_QUERY'%3E%3CViewQuery%20forceGridViews%3D'true'%20swapAxis%3D'false'%20returnDates%3D'true'%20xmlns%3D'http%3A%2F%2Fns.ideasoft.biz%2Fo3bi%2Fschema%2FViewQuery%2F2011-01'%3E%3CView%3Eurn%3Ao3bi%3Adefault%3Ar%3Aview%3Aa%3A2005%3C%2FView%3E%3CLabelsMode%3E%3CColumnsLabelMode%3EKEY%3C%2FColumnsLabelMode%3E%3CDimensionMembersLabelMode%3ELABEL%3C%2FDimensionMembersLabelMode%3E%3C%2FLabelsMode%3E%3CAdditionalAttributes%20includeAllAttributes%3D'true'%3E%3C%2FAdditionalAttributes%3E%3C%2FViewQuery%3E%3CdataFilters%3E%3CdataFilter%20type%3D'CALCULATED'%3E%3CcalculatedData%3Efalse%3C%2FcalculatedData%3E%3CnotCalculatedData%3Efalse%3C%2FnotCalculatedData%3E%3C%2FdataFilter%3E%3C%2FdataFilters%3E%3C%2FqueryCommand%3E%3CqueryCommand%20request%3D'QUERY_RESULT_CONTEXT'%20%2F%3E%3C%2FqueryCommands%3E&username=guest&password=TK-81444f98-cf9f-4a2e-b8b2-e95097067fa2&x-rest-locale=en_US&typeAccept=application%2Fis-grid%2Bjson&export=false",
+  "post_data": "senchapost=true&queryCommand=%3CqueryCommands%20xmlns%3D'http%3A%2F%2Fns.ideasoft.biz%2Fo3bi%2Fschema%2FQueryCommands%2F2011-01'%20xmlns%3Axsi%3D'http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance'%3E%3CqueryCommand%20request%3D'VIEW_QUERY'%3E%3CViewQuery%20forceGridViews%3D'true'%20swapAxis%3D'false'%20returnDates%3D'true'%20xmlns%3D'http%3A%2F%2Fns.ideasoft.biz%2Fo3bi%2Fschema%2FViewQuery%2F2011-01'%3E%3CView%3Eurn%3Ao3bi%3Adefault%3Ar%3Aview%3Aa%3A2005%3C%2FView%3E%3CLabelsMode%3E%3CColumnsLabelMode%3EKEY%3C%2FColumnsLabelMode%3E%3CDimensionMembersLabelMode%3ELABEL%3C%2FDimensionMembersLabelMode%3E%3C%2FLabelsMode%3E%3CAdditionalAttributes%20includeAllAttributes%3D'true'%3E%3C%2FAdditionalAttributes%3E%3C%2FViewQuery%3E%3CdataFilters%3E%3CdataFilter%20type%3D'CALCULATED'%3E%3CcalculatedData%3Efalse%3C%2FcalculatedData%3E%3CnotCalculatedData%3Efalse%3C%2FnotCalculatedData%3E%3C%2FdataFilter%3E%3C%2FdataFilters%3E%3C%2FqueryCommand%3E%3CqueryCommand%20request%3D'QUERY_RESULT_CONTEXT'%20%2F%3E%3C%2FqueryCommands%3E&username=guest&password=TK-5c0b49f0-c7b3-4054-a857-61b6efde8eee&x-rest-locale=en_US&typeAccept=application%2Fis-grid%2Bjson&export=false",
   "content_type": "application/is-grid+json;charset=UTF-8",
   "status": 200,
   "bytes": 26986
@@ -685,7 +685,7 @@
  },
  {
   "archivo": "20260904_076_biz.ideasoft.vaadin.control.AppWidgetSet.nocache.js",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/widgetsets/biz.ideasoft.vaadin.control.AppWidgetSet/biz.ideasoft.vaadin.control.AppWidgetSet.nocache.js?1788526497366",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/widgetsets/biz.ideasoft.vaadin.control.AppWidgetSet/biz.ideasoft.vaadin.control.AppWidgetSet.nocache.js?1788527095795",
   "metodo": "GET",
   "post_data": null,
   "content_type": "application/javascript",
@@ -696,58 +696,13 @@
   "archivo": "20260904_077_tcre.json",
   "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ViewPortlet_WAR_o3partsweb_INSTANCE_ajWcLJzxFKdA&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=processCommands&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-3&p_p_col_count=1&_O3ViewPortlet_WAR_o3partsweb_INSTANCE_ajWcLJzxFKdA_resource-name=processCommands",
   "metodo": "POST",
-  "post_data": "senchapost=true&queryCommand=%3CqueryCommands%20xmlns%3D'http%3A%2F%2Fns.ideasoft.biz%2Fo3bi%2Fschema%2FQueryCommands%2F2011-01'%20xmlns%3Axsi%3D'http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance'%3E%3CqueryCommand%20request%3D'VIEW_QUERY'%3E%3CViewQuery%20forceGridViews%3D'true'%20swapAxis%3D'false'%20returnDates%3D'true'%20xmlns%3D'http%3A%2F%2Fns.ideasoft.biz%2Fo3bi%2Fschema%2FViewQuery%2F2011-01'%3E%3CView%3Eurn%3Ao3bi%3Adefault%3Ar%3Aview%3Aa%3A2004%3C%2FView%3E%3CLabelsMode%3E%3CColumnsLabelMode%3EKEY%3C%2FColumnsLabelMode%3E%3CDimensionMembersLabelMode%3ELABEL%3C%2FDimensionMembersLabelMode%3E%3C%2FLabelsMode%3E%3CAdditionalAttributes%20includeAllAttributes%3D'true'%3E%3C%2FAdditionalAttributes%3E%3C%2FViewQuery%3E%3CdataFilters%3E%3CdataFilter%20type%3D'CALCULATED'%3E%3CcalculatedData%3Efalse%3C%2FcalculatedData%3E%3CnotCalculatedData%3Efalse%3C%2FnotCalculatedData%3E%3C%2FdataFilter%3E%3C%2FdataFilters%3E%3C%2FqueryCommand%3E%3CqueryCommand%20request%3D'QUERY_RESULT_CONTEXT'%20%2F%3E%3C%2FqueryCommands%3E&username=guest&password=TK-81444f98-cf9f-4a2e-b8b2-e95097067fa2&x-rest-locale=en_US&typeAccept=application%2Fis-grid%2Bjson&export=false",
+  "post_data": "senchapost=true&queryCommand=%3CqueryCommands%20xmlns%3D'http%3A%2F%2Fns.ideasoft.biz%2Fo3bi%2Fschema%2FQueryCommands%2F2011-01'%20xmlns%3Axsi%3D'http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance'%3E%3CqueryCommand%20request%3D'VIEW_QUERY'%3E%3CViewQuery%20forceGridViews%3D'true'%20swapAxis%3D'false'%20returnDates%3D'true'%20xmlns%3D'http%3A%2F%2Fns.ideasoft.biz%2Fo3bi%2Fschema%2FViewQuery%2F2011-01'%3E%3CView%3Eurn%3Ao3bi%3Adefault%3Ar%3Aview%3Aa%3A2004%3C%2FView%3E%3CLabelsMode%3E%3CColumnsLabelMode%3EKEY%3C%2FColumnsLabelMode%3E%3CDimensionMembersLabelMode%3ELABEL%3C%2FDimensionMembersLabelMode%3E%3C%2FLabelsMode%3E%3CAdditionalAttributes%20includeAllAttributes%3D'true'%3E%3C%2FAdditionalAttributes%3E%3C%2FViewQuery%3E%3CdataFilters%3E%3CdataFilter%20type%3D'CALCULATED'%3E%3CcalculatedData%3Efalse%3C%2FcalculatedData%3E%3CnotCalculatedData%3Efalse%3C%2FnotCalculatedData%3E%3C%2FdataFilter%3E%3C%2FdataFilters%3E%3C%2FqueryCommand%3E%3CqueryCommand%20request%3D'QUERY_RESULT_CONTEXT'%20%2F%3E%3C%2FqueryCommands%3E&username=guest&password=TK-5c0b49f0-c7b3-4054-a857-61b6efde8eee&x-rest-locale=en_US&typeAccept=application%2Fis-grid%2Bjson&export=false",
   "content_type": "application/is-grid+json;charset=UTF-8",
   "status": 200,
   "bytes": 27288
  },
  {
-  "archivo": "20260904_078_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=2&p_p_col_count=4&v-1788526497368",
-  "metodo": "POST",
-  "post_data": "v-browserDetails=1&theme=o3-parts-control-dashlet-theme&v-appId=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW_LAYOUT_25001&v-sh=720&v-sw=1280&v-cw=1280&v-ch=720&v-curdate=1788526497368&v-tzo=0&v-dstd=0&v-rtzo=0&v-dston=false&v-vw=361&v-vh=0&v-loc=https%3A%2F%2Fganges.bcu.gub.uy%3A8443%2Feportal%2Fweb%2Fguest%2Ftcre&v-wn=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_LAYOUT_25001-0.518864095338614",
-  "content_type": "application/json;charset=UTF-8",
-  "status": 200,
-  "bytes": 2256
- },
- {
-  "archivo": "20260904_079_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=1&p_p_col_count=4&v-1788526497366",
-  "metodo": "POST",
-  "post_data": "v-browserDetails=1&theme=o3-parts-control-dashlet-theme&v-appId=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_LAYOUT_25001&v-sh=720&v-sw=1280&v-cw=1280&v-ch=720&v-curdate=1788526497367&v-tzo=0&v-dstd=0&v-rtzo=0&v-dston=false&v-vw=361&v-vh=0&v-loc=https%3A%2F%2Fganges.bcu.gub.uy%3A8443%2Feportal%2Fweb%2Fguest%2Ftcre&v-wn=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_LAYOUT_25001-0.518864095338614",
-  "content_type": "application/json;charset=UTF-8",
-  "status": 200,
-  "bytes": 2256
- },
- {
-  "archivo": "20260904_080_styles.css",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/themes/liferay/styles.css",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "text/css",
-  "status": 200,
-  "bytes": 124145
- },
- {
-  "archivo": "20260904_081_styles.css",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/themes/o3-parts-vaadin-control-show-theme/styles.css",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "text/css",
-  "status": 200,
-  "bytes": 737
- },
- {
-  "archivo": "20260904_082_tokenfield.css",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/widgetsets/biz.ideasoft.vaadin.control.AppWidgetSet/tokenfield/tokenfield.css",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "text/css",
-  "status": 200,
-  "bytes": 1964
- },
- {
-  "archivo": "20260904_083_styles.css",
+  "archivo": "20260904_078_styles.css",
   "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/themes/o3-vaadin-control-theme/styles.css",
   "metodo": "GET",
   "post_data": null,
@@ -756,7 +711,43 @@
   "bytes": 16153
  },
  {
-  "archivo": "20260904_084_styles.css",
+  "archivo": "20260904_079_tcre.json",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=2&p_p_col_count=4&v-1788527095796",
+  "metodo": "POST",
+  "post_data": "v-browserDetails=1&theme=o3-parts-control-dashlet-theme&v-appId=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_LAYOUT_25001&v-sh=720&v-sw=1280&v-cw=1280&v-ch=720&v-curdate=1788527095796&v-tzo=0&v-dstd=0&v-rtzo=0&v-dston=false&v-vw=361&v-vh=0&v-loc=https%3A%2F%2Fganges.bcu.gub.uy%3A8443%2Feportal%2Fweb%2Fguest%2Ftcre&v-wn=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_LAYOUT_25001-0.3009069796108115",
+  "content_type": "application/json;charset=UTF-8",
+  "status": 200,
+  "bytes": 2256
+ },
+ {
+  "archivo": "20260904_080_tokenfield.css",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/widgetsets/biz.ideasoft.vaadin.control.AppWidgetSet/tokenfield/tokenfield.css",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "text/css",
+  "status": 200,
+  "bytes": 1964
+ },
+ {
+  "archivo": "20260904_081_styles.css",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/themes/liferay/styles.css",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "text/css",
+  "status": 200,
+  "bytes": 124145
+ },
+ {
+  "archivo": "20260904_082_styles.css",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/themes/o3-parts-vaadin-control-show-theme/styles.css",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "text/css",
+  "status": 200,
+  "bytes": 737
+ },
+ {
+  "archivo": "20260904_083_styles.css",
   "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/widgetsets/biz.ideasoft.vaadin.control.AppWidgetSet/buttongroup-widget/styles.css",
   "metodo": "GET",
   "post_data": null,
@@ -765,13 +756,22 @@
   "bytes": 3335
  },
  {
-  "archivo": "20260904_085_dragdroplayouts.css",
+  "archivo": "20260904_084_dragdroplayouts.css",
   "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/widgetsets/biz.ideasoft.vaadin.control.AppWidgetSet/fi_jasoft_dragdroplayouts/dragdroplayouts.css",
   "metodo": "GET",
   "post_data": null,
   "content_type": "text/css",
   "status": 200,
   "bytes": 7930
+ },
+ {
+  "archivo": "20260904_085_styles.css",
+  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/themes/o3-vaadin-search-theme/styles.css",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "text/css",
+  "status": 200,
+  "bytes": 962
  },
  {
   "archivo": "20260904_086_aui-url-min.js",
@@ -783,25 +783,7 @@
   "bytes": 4337
  },
  {
-  "archivo": "20260904_087_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=1&p_p_col_count=4&v-1788526497370",
-  "metodo": "POST",
-  "post_data": "v-browserDetails=1&theme=o3-parts-control-dashlet-theme&v-appId=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH_LAYOUT_25001&v-sh=720&v-sw=1280&v-cw=1280&v-ch=720&v-curdate=1788526497370&v-tzo=0&v-dstd=0&v-rtzo=0&v-dston=false&v-vw=361&v-vh=0&v-loc=https%3A%2F%2Fganges.bcu.gub.uy%3A8443%2Feportal%2Fweb%2Fguest%2Ftcre&v-wn=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_LAYOUT_25001-0.518864095338614",
-  "content_type": "application/json;charset=UTF-8",
-  "status": 200,
-  "bytes": 2256
- },
- {
-  "archivo": "20260904_088_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=2&p_p_col_count=4&v-1788526497369",
-  "metodo": "POST",
-  "post_data": "v-browserDetails=1&theme=o3-parts-control-dashlet-theme&v-appId=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_LAYOUT_25001&v-sh=720&v-sw=1280&v-cw=1280&v-ch=720&v-curdate=1788526497369&v-tzo=0&v-dstd=0&v-rtzo=0&v-dston=false&v-vw=361&v-vh=0&v-loc=https%3A%2F%2Fganges.bcu.gub.uy%3A8443%2Feportal%2Fweb%2Fguest%2Ftcre&v-wn=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_LAYOUT_25001-0.518864095338614",
-  "content_type": "application/json;charset=UTF-8",
-  "status": 200,
-  "bytes": 2256
- },
- {
-  "archivo": "20260904_089_styles.css",
+  "archivo": "20260904_087_styles.css",
   "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/themes/o3-vaadin-theme/styles.css",
   "metodo": "GET",
   "post_data": null,
@@ -810,13 +792,31 @@
   "bytes": 23823
  },
  {
-  "archivo": "20260904_090_styles.css",
-  "url": "https://ganges.bcu.gub.uy:8443/o3-parts-web/VAADIN/themes/o3-vaadin-search-theme/styles.css",
-  "metodo": "GET",
-  "post_data": null,
-  "content_type": "text/css",
+  "archivo": "20260904_088_tcre.json",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=2&p_p_col_count=4&v-1788527095798",
+  "metodo": "POST",
+  "post_data": "v-browserDetails=1&theme=o3-parts-control-dashlet-theme&v-appId=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW_LAYOUT_25001&v-sh=720&v-sw=1280&v-cw=1280&v-ch=720&v-curdate=1788527095798&v-tzo=0&v-dstd=0&v-rtzo=0&v-dston=false&v-vw=361&v-vh=0&v-loc=https%3A%2F%2Fganges.bcu.gub.uy%3A8443%2Feportal%2Fweb%2Fguest%2Ftcre&v-wn=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_LAYOUT_25001-0.3009069796108115",
+  "content_type": "application/json;charset=UTF-8",
   "status": 200,
-  "bytes": 962
+  "bytes": 2256
+ },
+ {
+  "archivo": "20260904_089_tcre.json",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=1&p_p_col_count=4&v-1788527095799",
+  "metodo": "POST",
+  "post_data": "v-browserDetails=1&theme=o3-parts-control-dashlet-theme&v-appId=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_LAYOUT_25001&v-sh=720&v-sw=1280&v-cw=1280&v-ch=720&v-curdate=1788527095799&v-tzo=0&v-dstd=0&v-rtzo=0&v-dston=false&v-vw=361&v-vh=0&v-loc=https%3A%2F%2Fganges.bcu.gub.uy%3A8443%2Feportal%2Fweb%2Fguest%2Ftcre&v-wn=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_LAYOUT_25001-0.3009069796108115",
+  "content_type": "application/json;charset=UTF-8",
+  "status": 200,
+  "bytes": 2256
+ },
+ {
+  "archivo": "20260904_090_tcre.json",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=v-browserDetails&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=1&p_p_col_count=4&v-1788527095800",
+  "metodo": "POST",
+  "post_data": "v-browserDetails=1&theme=o3-parts-control-dashlet-theme&v-appId=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH_LAYOUT_25001&v-sh=720&v-sw=1280&v-cw=1280&v-ch=720&v-curdate=1788527095800&v-tzo=0&v-dstd=0&v-rtzo=0&v-dston=false&v-vw=361&v-vh=0&v-loc=https%3A%2F%2Fganges.bcu.gub.uy%3A8443%2Feportal%2Fweb%2Fguest%2Ftcre&v-wn=v-O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_LAYOUT_25001-0.3009069796108115",
+  "content_type": "application/json;charset=UTF-8",
+  "status": 200,
+  "bytes": 2256
  },
  {
   "archivo": "20260904_091_fontello.css",
@@ -847,72 +847,72 @@
  },
  {
   "archivo": "20260904_094_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=1&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=1&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH_v-resourcePath=%2FUIDL%2F&v-uiId=0",
   "metodo": "POST",
-  "post_data": "{\"csrfToken\":\"c60c17f6-35bd-4e89-bb14-e25e558bebd4\",\"rpc\":[[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"setSupport\",[true]]],\"syncId\":0,\"clientId\":0,\"wsver\":\"7.7.12\"}",
+  "post_data": "{\"csrfToken\":\"204b47f9-d9a2-49d9-987a-603c33712c88\",\"rpc\":[[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"setSupport\",[true]]],\"syncId\":0,\"clientId\":0,\"wsver\":\"7.7.12\"}",
   "content_type": "application/json;charset=UTF-8",
   "status": 200,
   "bytes": 6018
  },
  {
   "archivo": "20260904_095_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=2&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=2&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_v-resourcePath=%2FUIDL%2F&v-uiId=0",
   "metodo": "POST",
-  "post_data": "{\"csrfToken\":\"94130b24-5919-4fbc-9ac0-39d9033732fe\",\"rpc\":[[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"setSupport\",[true]]],\"syncId\":0,\"clientId\":0,\"wsver\":\"7.7.12\"}",
+  "post_data": "{\"csrfToken\":\"40fa0cb2-ae2b-40a2-8ff1-df6ea53861cb\",\"rpc\":[[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"setSupport\",[true]]],\"syncId\":0,\"clientId\":0,\"wsver\":\"7.7.12\"}",
   "content_type": "application/json;charset=UTF-8",
   "status": 200,
   "bytes": 6018
  },
  {
   "archivo": "20260904_096_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=2&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=1&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_v-resourcePath=%2FUIDL%2F&v-uiId=0",
   "metodo": "POST",
-  "post_data": "{\"csrfToken\":\"5c169422-958a-4159-a77d-e95b94512257\",\"rpc\":[[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"setSupport\",[true]]],\"syncId\":0,\"clientId\":0,\"wsver\":\"7.7.12\"}",
+  "post_data": "{\"csrfToken\":\"55deb250-216e-4a58-9b68-f934c74eb4fa\",\"rpc\":[[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"setSupport\",[true]]],\"syncId\":0,\"clientId\":0,\"wsver\":\"7.7.12\"}",
   "content_type": "application/json;charset=UTF-8",
   "status": 200,
   "bytes": 6018
  },
  {
   "archivo": "20260904_097_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=1&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=2&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW_v-resourcePath=%2FUIDL%2F&v-uiId=0",
   "metodo": "POST",
-  "post_data": "{\"csrfToken\":\"848b8f41-a08b-4121-bb91-ed68f5925b89\",\"rpc\":[[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"setSupport\",[true]]],\"syncId\":0,\"clientId\":0,\"wsver\":\"7.7.12\"}",
+  "post_data": "{\"csrfToken\":\"b481cbe5-22f8-4d68-9aec-a354e05ec62f\",\"rpc\":[[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"setSupport\",[true]]],\"syncId\":0,\"clientId\":0,\"wsver\":\"7.7.12\"}",
   "content_type": "application/json;charset=UTF-8",
   "status": 200,
   "bytes": 6018
  },
  {
   "archivo": "20260904_098_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=1&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=2&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_v-resourcePath=%2FUIDL%2F&v-uiId=0",
   "metodo": "POST",
-  "post_data": "{\"csrfToken\":\"c60c17f6-35bd-4e89-bb14-e25e558bebd4\",\"rpc\":[[\"0\",\"com.vaadin.shared.ui.ui.UIServerRpc\",\"resize\",[101,361,1280,720]],[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"returnValue\",[\"0a87fa0b-52f6-47f1-bf93-f83f7e1a2820\",\"{\\\"filters\\\":{\\\"E03A64DE78CAF2646FC4BA0F1E6B93F71788526490496\\\":{\\\"controltcre2\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]},\\\"controltcre\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]}}},\\\"sessions\\\":[\\\"E03A64DE78CAF2646FC4BA0F1E6B93F71788526490496\\\"]}\"]]],\"syncId\":1,\"clientId\":1}",
+  "post_data": "{\"csrfToken\":\"40fa0cb2-ae2b-40a2-8ff1-df6ea53861cb\",\"rpc\":[[\"0\",\"com.vaadin.shared.ui.ui.UIServerRpc\",\"resize\",[101,361,1280,720]],[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"returnValue\",[\"612b30e6-299e-4a1b-b744-7db473e8ac98\",\"{\\\"filters\\\":{\\\"3B026C5CA300B1C3D50BDEA90CC479141788527087609\\\":{\\\"controltcre2\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]},\\\"controltcre\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]}}},\\\"sessions\\\":[\\\"3B026C5CA300B1C3D50BDEA90CC479141788527087609\\\"]}\"]]],\"syncId\":1,\"clientId\":1}",
   "content_type": "application/json;charset=UTF-8",
   "status": 200,
   "bytes": 582
  },
  {
   "archivo": "20260904_099_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=2&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=1&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH_v-resourcePath=%2FUIDL%2F&v-uiId=0",
   "metodo": "POST",
-  "post_data": "{\"csrfToken\":\"94130b24-5919-4fbc-9ac0-39d9033732fe\",\"rpc\":[[\"0\",\"com.vaadin.shared.ui.ui.UIServerRpc\",\"resize\",[101,361,1280,720]],[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"returnValue\",[\"8a508a5b-a6e5-4b62-b8be-01e9035f9982\",\"{\\\"filters\\\":{\\\"E03A64DE78CAF2646FC4BA0F1E6B93F71788526490496\\\":{\\\"controltcre2\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]},\\\"controltcre\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]}}},\\\"sessions\\\":[\\\"E03A64DE78CAF2646FC4BA0F1E6B93F71788526490496\\\"]}\"]]],\"syncId\":1,\"clientId\":1}",
+  "post_data": "{\"csrfToken\":\"204b47f9-d9a2-49d9-987a-603c33712c88\",\"rpc\":[[\"0\",\"com.vaadin.shared.ui.ui.UIServerRpc\",\"resize\",[101,361,1280,720]],[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"returnValue\",[\"e8a832a9-71fd-44eb-82f3-24d1c4033737\",\"{\\\"filters\\\":{\\\"3B026C5CA300B1C3D50BDEA90CC479141788527087609\\\":{\\\"controltcre2\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]},\\\"controltcre\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]}}},\\\"sessions\\\":[\\\"3B026C5CA300B1C3D50BDEA90CC479141788527087609\\\"]}\"]]],\"syncId\":1,\"clientId\":1}",
   "content_type": "application/json;charset=UTF-8",
   "status": 200,
   "bytes": 582
  },
  {
   "archivo": "20260904_100_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=2&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_YWbxR9nVQCZn_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_M7J4eFikELS7__column-2&p_p_col_pos=1&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_IsFQOIgIdKEJ_v-resourcePath=%2FUIDL%2F&v-uiId=0",
   "metodo": "POST",
-  "post_data": "{\"csrfToken\":\"5c169422-958a-4159-a77d-e95b94512257\",\"rpc\":[[\"0\",\"com.vaadin.shared.ui.ui.UIServerRpc\",\"resize\",[101,361,1280,720]],[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"returnValue\",[\"a528ca4c-7b28-400b-bf26-b45b151202e7\",\"{\\\"filters\\\":{\\\"E03A64DE78CAF2646FC4BA0F1E6B93F71788526490496\\\":{\\\"controltcre2\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]},\\\"controltcre\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]}}},\\\"sessions\\\":[\\\"E03A64DE78CAF2646FC4BA0F1E6B93F71788526490496\\\"]}\"]]],\"syncId\":1,\"clientId\":1}",
+  "post_data": "{\"csrfToken\":\"55deb250-216e-4a58-9b68-f934c74eb4fa\",\"rpc\":[[\"0\",\"com.vaadin.shared.ui.ui.UIServerRpc\",\"resize\",[101,361,1280,720]],[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"returnValue\",[\"5d7b54ee-7125-420e-b2be-caeaa98a92b7\",\"{\\\"filters\\\":{\\\"3B026C5CA300B1C3D50BDEA90CC479141788527087609\\\":{\\\"controltcre2\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]},\\\"controltcre\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]}}},\\\"sessions\\\":[\\\"3B026C5CA300B1C3D50BDEA90CC479141788527087609\\\"]}\"]]],\"syncId\":1,\"clientId\":1}",
   "content_type": "application/json;charset=UTF-8",
   "status": 200,
   "bytes": 582
  },
  {
   "archivo": "20260904_101_tcre.json",
-  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=1&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_BI7UGyqBuPtH_v-resourcePath=%2FUIDL%2F&v-uiId=0",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre?p_p_id=O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=APP&p_p_cacheability=cacheLevelPage&p_p_col_id=_118_INSTANCE_RE1LtP3eD2Cd__column-2&p_p_col_pos=2&p_p_col_count=4&_O3ControlPortlet_WAR_o3partsweb_INSTANCE_tZJuVn2HmgQW_v-resourcePath=%2FUIDL%2F&v-uiId=0",
   "metodo": "POST",
-  "post_data": "{\"csrfToken\":\"848b8f41-a08b-4121-bb91-ed68f5925b89\",\"rpc\":[[\"0\",\"com.vaadin.shared.ui.ui.UIServerRpc\",\"resize\",[101,361,1280,720]],[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"returnValue\",[\"a717e202-6365-4cfd-beca-51fced0183ef\",\"{\\\"filters\\\":{\\\"E03A64DE78CAF2646FC4BA0F1E6B93F71788526490496\\\":{\\\"controltcre2\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]},\\\"controltcre\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]}}},\\\"sessions\\\":[\\\"E03A64DE78CAF2646FC4BA0F1E6B93F71788526490496\\\"]}\"]]],\"syncId\":1,\"clientId\":1}",
+  "post_data": "{\"csrfToken\":\"b481cbe5-22f8-4d68-9aec-a354e05ec62f\",\"rpc\":[[\"0\",\"com.vaadin.shared.ui.ui.UIServerRpc\",\"resize\",[101,361,1280,720]],[\"1\",\"com.github.wolfie.clientstorage.shared.ClientStorageServerRpc\",\"returnValue\",[\"41dff8e3-07b4-476a-b65a-2dc1ed20e474\",\"{\\\"filters\\\":{\\\"3B026C5CA300B1C3D50BDEA90CC479141788527087609\\\":{\\\"controltcre2\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]},\\\"controltcre\\\":{\\\"dims\\\":{},\\\"gridSelection\\\":[]}}},\\\"sessions\\\":[\\\"3B026C5CA300B1C3D50BDEA90CC479141788527087609\\\"]}\"]]],\"syncId\":1,\"clientId\":1}",
   "content_type": "application/json;charset=UTF-8",
   "status": 200,
   "bytes": 582
