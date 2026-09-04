@@ -114,6 +114,218 @@ for txt, esperado in [("Nota del Tesoro en UI a 5 años", "UI"),
           f"'{txt[:35]}' -> {esperado}")
 
 # ---------------------------------------------------------------------
+print("\n[5] Siembra de variables cubre todo var_id que escribe el ETL")
+# Este test habria detectado la falla de la corrida historica 2026-08-06:
+# el ETL escribia observaciones de var_ids que no existian en `variables`
+# y TODO insert moria por FOREIGN KEY.
+from src.etl import fred_series, seed  # noqa: E402
+
+ESCRITAS_POR_EL_ETL = {
+    "tc_usduyu_interbancario", "tc_usduyu_prom_m", "tc_usduyu_cierre_m",
+    "ui_valor", "ipc_general_idx", "ipc_general_empalmado",
+    "ipc_subyacente_idx",
+} | set(fred_series.SERIES) | {f"ipc_div_{c}" for c in seed.DIVISIONES_CCIF}
+
+with tempfile.TemporaryDirectory() as tmp:
+    ruta = Path(tmp) / "t.db"
+    db.inicializar(ruta)
+    con = db.conectar(ruta)
+    n = seed.sembrar_variables(con)
+    check(n >= 30, f"la siembra registra el inventario completo ({n} variables)")
+    registradas = seed.variables_registradas(con)
+    faltan = ESCRITAS_POR_EL_ETL - registradas
+    check(not faltan, f"ningun var_id del ETL queda sin registrar (faltan: {faltan or '-'})")
+
+    # y el guardrail de db.py rechaza con mensaje claro un var_id desconocido
+    try:
+        db.upsert_observaciones(con, "no_existe", [("2026-01-01", 1.0)])
+        check(False, "upsert con var_id desconocido debe fallar")
+    except ValueError as e:
+        check("variables.yaml" in str(e), "el error de var_id desconocido explica el arreglo")
+    con.close()
+
+# ---------------------------------------------------------------------
+print("\n[6] Parsers del INE contra las planillas reales versionadas")
+BASE = Path(__file__).resolve().parents[1] / "data" / "raw" / "ine" / "base_2022_10"
+if not BASE.exists() or not any(BASE.iterdir()):
+    print("  (sin planillas en data/raw/ine/base_2022_10; se salta)")
+else:
+    r_largo = ine_ipc.buscar_archivo(BASE, "gral", "variaciones")
+    check(r_largo is not None, "planilla de serie general larga encontrada")
+    if r_largo:
+        s = ine_ipc.parsear_general_largo(r_largo)
+        check(len(s) > 1000, f"serie larga con {len(s)} obs (>1000)")
+        check(s.index.min().year == 1937, f"arranca en {s.index.min().date()}")
+        check((s > 0).all(), "sin ceros ni negativos")
+        var_m = s.pct_change().dropna()
+        check(abs(s.loc["2022-10-01"] - 100) < 0.5,
+              f"base oct-2022 ~ 100 (da {s.loc['2022-10-01']:.2f})")
+        # la inflacion mensual post-2011 debe ser moderada
+        post = var_m[var_m.index >= "2011-01-01"] * 100
+        check(post.between(-2, 5).all(),
+              "toda variacion mensual 2011+ dentro de [-2%, +5%]")
+
+    r_reg = ine_ipc.buscar_archivo(BASE, "general_total")
+    check(r_reg is not None, "planilla por region encontrada")
+    if r_reg:
+        reg = ine_ipc.parsear_general_regiones(r_reg)
+        tp = reg["total_pais"]
+        check(len(tp) >= 180, f"total pais con {len(tp)} obs desde {tp.index.min().date()}")
+        if r_largo:
+            comun = tp.index.intersection(s.index)
+            dif = (tp[comun] - s[comun]).abs().max()
+            check(dif < 0.01, f"regiones y serie larga coinciden (dif max {dif:.6f})")
+
+    r_div = ine_ipc.buscar_archivo(BASE, "division", "pais")
+    check(r_div is not None, "planilla de divisiones encontrada")
+    if r_div:
+        d = ine_ipc.parsear_divisiones(r_div)
+        divs = sorted(d["division"].unique())
+        check(divs == sorted(seed.DIVISIONES_CCIF),
+              f"13 divisiones CCIF completas (hay {len(divs)})")
+        obs = d.groupby("division").size()
+        check(obs.nunique() == 1 and obs.iloc[0] >= 180,
+              f"todas las divisiones con la misma cobertura ({obs.iloc[0]} meses)")
+
+    r_sub = ine_ipc.buscar_archivo(BASE, "subyacente")
+    check(r_sub is not None, "planilla del IPC-CE encontrada")
+    if r_sub:
+        n = ine_ipc.parsear_subyacente(r_sub)
+        check(len(n) >= 40, f"IPC-CE con {len(n)} obs desde {n.index.min().date()}")
+        check(abs(n.loc["2022-10-01"] - 100) < 1e-6, "IPC-CE ancla 100 en oct-2022")
+
+# ---------------------------------------------------------------------
+print("\n[7] Parser del IMS contra las planillas reales")
+from src.etl import ine_ims  # noqa: E402
+IMS_DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / "descubrimiento" / "ims_ine"
+if not IMS_DIR.exists() or not any(IMS_DIR.iterdir()):
+    print("  (sin planillas del IMS; se salta)")
+else:
+    res = ine_ims.series(IMS_DIR)
+    check("salario_nominal_ims" in res, "IMSN encontrado y parseado")
+    check("ims_general_idx" in res, "IMS general encontrado y parseado")
+    if "salario_nominal_ims" in res:
+        s = res["salario_nominal_ims"]
+        check(s.index.min() == pd.Timestamp("2002-12-01"),
+              f"IMSN arranca dic-2002 (da {s.index.min().date()})")
+        check(len(s) >= 280, f"IMSN con {len(s)} obs")
+        vm = s.pct_change().dropna() * 100
+        check(vm.between(-2, 20).all(), "variaciones mensuales del IMSN plausibles")
+    if "ims_general_idx" in res:
+        g = res["ims_general_idx"]
+        check(g.index.min().year == 1968, f"IMS general arranca 1968 (da {g.index.min().date()})")
+        check((g > 0).all(), "IMS general sin ceros ni negativos")
+
+# ---------------------------------------------------------------------
+print("\n[8] Extraccion de la TPM del IPOM (PDF real)")
+from src.etl import bcu_ipom  # noqa: E402
+check(bcu_ipom.fecha_ref_de_nombre("IPOM_2026-1.pdf") == "2026-01-01",
+      "fecha_ref de 'IPOM_2026-1.pdf' -> 2026-01-01")
+check(bcu_ipom.fecha_ref_de_nombre("IPOM_2025-4.pdf") == "2025-10-01",
+      "fecha_ref de 'IPOM_2025-4.pdf' -> 2025-10-01")
+check(bcu_ipom.fecha_ref_de_nombre("otra_cosa.pdf") is None,
+      "nombre sin patron IPOM -> None")
+
+IPOM_DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / "descubrimiento" / "tpm_bcu"
+if not IPOM_DIR.exists() or not list(IPOM_DIR.glob("*IPOM*.pdf")):
+    print("  (sin IPOM archivado; se salta la extraccion real)")
+else:
+    resultado = bcu_ipom.valor_vigente(IPOM_DIR)
+    check(resultado is not None, "se extrajo un valor de TPM del IPOM real")
+    if resultado:
+        fecha_ref, valor, ruta = resultado
+        check(0 < valor < 30, f"TPM en rango plausible (dio {valor}%)")
+        check(fecha_ref is not None, f"fecha_ref derivada del nombre ({fecha_ref})")
+
+# ---------------------------------------------------------------------
+print("\n[9] Extraccion de expectativas de inflacion (HTML real del BCU)")
+from src.etl import bcu_expectativas  # noqa: E402
+
+EXPECT_DIR = (Path(__file__).resolve().parents[1] / "data" / "raw" /
+             "descubrimiento" / "expectativas_bcu")
+_archivos = list(EXPECT_DIR.glob("*Expectativas-de-los-agentes*")) if EXPECT_DIR.exists() else []
+if not _archivos:
+    print("  (sin pagina archivada; se salta la extraccion real)")
+else:
+    html = _archivos[-1].read_text(encoding="utf-8", errors="replace")
+    resultado = bcu_expectativas.parsear(html)
+    check(bool(resultado), "se extrajo el bloque de expectativas")
+    check("12" in resultado and "24" in resultado,
+         "horizontes 12m y 24m presentes")
+    if "12" in resultado:
+        check(0 < resultado["12"] < 30, f"mediana 12m en rango plausible ({resultado['12']}%)")
+    if "24" in resultado:
+        check(0 < resultado["24"] < 30, f"mediana 24m en rango plausible ({resultado['24']}%)")
+    check("mes_referencia" in resultado, f"mes_referencia derivado ({resultado.get('mes_referencia')})")
+
+# ---------------------------------------------------------------------
+print("\n[10] Extraccion del IMAE (HTML real del BCU, graficos Plotly)")
+from src.etl import bcu_imae  # noqa: E402
+
+IMAE_DIR = (Path(__file__).resolve().parents[1] / "data" / "raw" /
+           "descubrimiento" / "imae_bcu")
+_archivos_imae = list(IMAE_DIR.glob("*IMAE-graficas*")) if IMAE_DIR.exists() else []
+if not _archivos_imae:
+    print("  (sin pagina archivada; se salta la extraccion real)")
+else:
+    html = _archivos_imae[-1].read_text(encoding="utf-8", errors="replace")
+    resultado = bcu_imae.parsear(html)
+    check(bool(resultado), "se extrajo al menos un widget de IMAE")
+    check("imae" in resultado, "serie desestacionalizada ('imae') presente")
+    for var_id, s in resultado.items():
+        check(len(s) > 100, f"{var_id}: {len(s)} obs (esperable > 100)")
+        check(s.between(50, 200).all(), f"{var_id}: valores en rango plausible (base ~100)")
+
+# ---------------------------------------------------------------------
+print("\n[11] Extraccion del ITCR (piezas reales del BCU, sin red)")
+from src.etl import bcu_itcr  # noqa: E402
+
+ITCR_DIR = (Path(__file__).resolve().parents[1] / "data" / "raw" /
+           "descubrimiento" / "itcr_bcu_js")
+# el archivo mas reciente puede ser una pagina de error real del BCU (ej.
+# 503 Service Unavailable, unos cientos de bytes) en vez de un render real
+# (cientos de KB) -- se filtra por tamano para no fallar el test por una
+# falla transitoria del servidor, no del parser.
+_render_itcr = [p for p in ITCR_DIR.glob("*render.html") if p.stat().st_size > 50_000] \
+    if ITCR_DIR.exists() else []
+if not _render_itcr:
+    print("  (sin pagina archivada [o solo paginas de error]; se salta la extraccion real)")
+else:
+    html = _render_itcr[-1].read_text(encoding="utf-8", errors="replace")
+    pares = bcu_itcr._pares_portlet_col(html)
+    check(len(pares) == 2, f"se encontraron 2 pares portlet/columna (dio {len(pares)})")
+
+    _red_dir = ITCR_DIR / "red"
+    _render_portlet = sorted(_red_dir.glob("*render_portlet.json")) if _red_dir.exists() else []
+    _grandes = [p for p in _render_portlet if p.stat().st_size > 100_000]
+    if _grandes:
+        txt = _grandes[0].read_text(encoding="utf-8", errors="replace")
+        m_t = bcu_itcr._PATRON_TICKET.search(txt)
+        m_v = bcu_itcr._PATRON_VIEW.search(txt)
+        check(m_t is not None, "se extrajo un Ticket de un render_portlet real")
+        check(m_v is not None, "se extrajo una View de un render_portlet real")
+    else:
+        print("  (sin render_portlet.json archivado; se salta ticket/view)")
+
+    import json as _json
+    _tcre_grandes = sorted(_red_dir.glob("*tcre.json")) if _red_dir.exists() else []
+    _grid_real = None
+    for p in _tcre_grandes:
+        if 20_000 < p.stat().st_size < 35_000:
+            try:
+                _grid_real = _json.loads(p.read_text(encoding="utf-8", errors="replace"))
+                break
+            except Exception:                                # noqa: BLE001
+                continue
+    if _grid_real is None:
+        print("  (sin grid tcre.json archivado; se salta el parseo del grid)")
+    else:
+        res = bcu_itcr._series_del_grid(_grid_real)
+        check(bool(res), "se parseo al menos una serie del grid real")
+        for nombre, s in res.items():
+            check(len(s) > 50, f"{nombre}: {len(s)} obs (esperable > 50)")
+
+# ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")
 for f in fallos:
     print("  -", f)

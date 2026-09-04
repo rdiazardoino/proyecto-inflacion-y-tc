@@ -1,0 +1,36 @@
+
+.panel-template-config {
+	padding-top: 36px!important;
+}
+
+.o3-control-show-editor {
+}
+
+.o3-control-show-editor .v-slot-save-spec {
+    float: right;
+}
+
+.o3-control-show-editor .save-spec {
+    border: none;
+    z-index: 5;
+    position: absolute;
+    top: 0;
+    margin: 1px 1px 0px 0px;
+    height: 31px;
+    border-radius: 0px!important;
+    line-height: 0px;
+    padding: 4px 15px 2px 15px;
+    box-shadow: none!important;
+    background: white;
+    right: 0;
+}
+
+.o3-control-show-editor .v-slot-o3-control-show-itemdescription-help{
+}
+
+.o3-control-show-editor .o3-control-show-itemdescription-help {
+}
+
+.o3-control-show-editor .v-caption-o3-control-show-itemdescription-help{
+	margin-bottom: 5px;
+}

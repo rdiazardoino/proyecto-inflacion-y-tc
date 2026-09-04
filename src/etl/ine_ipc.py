@@ -22,19 +22,31 @@ from __future__ import annotations
 import datetime as dt
 import re
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import unquote, urljoin
 
 import pandas as pd
-import requests
 from bs4 import BeautifulSoup
+
+from src.etl import http_client
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "raw" / "ine"
 
+# Cada base tiene una lista de URLs candidatas: gub.uy reorganiza rutas sin
+# redirect. Se usa la primera que responda con planillas.
 PAGINAS = {
-    "base_2022_10": "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-octubre-2022100",
-    "base_2010_12": "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-diciembre-2010100",
-    "base_1997_03": "https://www.gub.uy/instituto-nacional-estadistica/datos/series-historicas-ipc-base-marzo-1997100",
+    "base_2022_10": [
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-octubre-2022100",
+    ],
+    "base_2010_12": [
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-diciembre-2010100",
+    ],
+    "base_1997_03": [
+        # la ruta /datos/ devolvio 404 el 6-ago-2026; se prueban variantes
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/series-historicas-ipc-base-marzo-1997100",
+        "https://www.gub.uy/instituto-nacional-estadistica/datos/series-historicas-ipc-base-marzo-1997100",
+        "https://www.gub.uy/instituto-nacional-estadistica/datos-y-estadisticas/estadisticas/serie-historica-ipc-base-marzo-1997100",
+    ],
 }
 
 # Orden cronologico de las bases, de la mas vieja a la vigente
@@ -55,8 +67,7 @@ MESES = {
 # ---------------------------------------------------------------------
 def descubrir_planillas(url: str, timeout: int = 60) -> list[str]:
     """Enlaces a planillas encontrados en una pagina de serie historica."""
-    r = requests.get(url, headers=HEADERS, timeout=timeout)
-    r.raise_for_status()
+    r = http_client.get(url, timeout=timeout)
     sopa = BeautifulSoup(r.text, "html.parser")
     enlaces = []
     for a in sopa.find_all("a", href=True):
@@ -68,29 +79,48 @@ def descubrir_planillas(url: str, timeout: int = 60) -> list[str]:
 
 
 def descargar(url: str, destino_dir: Path, timeout: int = 120) -> Path:
+    """
+    Descarga a destino_dir/YYYYMMDD_<nombre>. El nombre se decodifica con
+    unquote() ANTES de sanitizar: si no, "%20" (espacio) pasa a "_20" en vez
+    de un separador limpio, y filenames como "IMSN_M_B08.xls" salen
+    "IMSN_20M_20B08.xls" -- rompe cualquier matching por fragmentos de
+    nombre (ver ine_ims.buscar_archivo). Bug real detectado el 3-sep-2026:
+    todas las planillas descargadas hasta ese commit tienen el nombre sucio;
+    quedan asi en el historial (no se renombran retroactivamente), pero las
+    nuevas descargas salen limpias.
+    """
     destino_dir.mkdir(parents=True, exist_ok=True)
-    nombre = re.sub(r"[^\w.\-]", "_", url.split("/")[-1].split("?")[0])
+    nombre = re.sub(r"[^\w.\-]", "_", unquote(url.split("/")[-1].split("?")[0]))
     destino = destino_dir / f"{dt.date.today():%Y%m%d}_{nombre}"
     if destino.exists():
         return destino
-    r = requests.get(url, headers=HEADERS, timeout=timeout)
-    r.raise_for_status()
+    r = http_client.get(url, timeout=timeout)
     destino.write_bytes(r.content)
     return destino
 
 
-def bajar_todo() -> dict[str, list[Path]]:
-    """Descarga las planillas de las tres bases. Devuelve rutas por base."""
+def bajar_todo(bases: list[str] | None = None) -> dict[str, list[Path]]:
+    """
+    Descarga las planillas. Por defecto solo la base vigente (oct-2022):
+    su planilla 'gral y variaciones' ya trae la serie oficial reexpresada
+    desde 1937, y las bases viejas quedaron archivadas en data/raw/ine/.
+    Pasar bases=list(PAGINAS) para re-descargar todo.
+    """
+    bases = bases or ["base_2022_10"]
     salida: dict[str, list[Path]] = {}
-    for clave, url in PAGINAS.items():
-        try:
-            urls = descubrir_planillas(url)
-        except Exception as e:                       # noqa: BLE001
-            print(f"[ine] no se pudo leer {clave}: {e}")
-            salida[clave] = []
+    for clave, candidatas in PAGINAS.items():
+        if clave not in bases:
             continue
-        if not urls:
-            print(f"[ine] AVISO: ninguna planilla encontrada en {clave} ({url})")
+        urls: list[str] = []
+        for url in candidatas:
+            try:
+                urls = descubrir_planillas(url)
+            except Exception as e:                   # noqa: BLE001
+                print(f"[ine] no se pudo leer {clave} en {url}: {e}")
+                continue
+            if urls:
+                break
+            print(f"[ine] AVISO: ninguna planilla en {url}")
         rutas = []
         for u in urls:
             try:
@@ -103,7 +133,103 @@ def bajar_todo() -> dict[str, list[Path]]:
 
 
 # ---------------------------------------------------------------------
-# Parseo
+# Parsers especificos por planilla (calibrados contra los archivos reales
+# commiteados en data/raw/ine/ el 2-sep-2026). La heuristica leer_indice()
+# queda como fallback para archivos no reconocidos.
+# ---------------------------------------------------------------------
+def _normalizar(texto: str) -> str:
+    import unicodedata
+    t = unicodedata.normalize("NFD", texto.lower())
+    return "".join(c for c in t if unicodedata.category(c) != "Mn")
+
+
+def buscar_archivo(directorio: Path, *fragmentos: str) -> Path | None:
+    """Archivo mas reciente cuyo nombre normalizado contiene todos los fragmentos."""
+    candidatos = [p for p in sorted(directorio.glob("*"))
+                  if all(f in _normalizar(p.name) for f in fragmentos)]
+    return candidatos[-1] if candidatos else None
+
+
+def _serie_anio_mes(df: pd.DataFrame, col_anio: str, col_mes: str,
+                    col_valor: str) -> pd.Series:
+    df = df.copy()
+    df[col_anio] = pd.to_numeric(df[col_anio], errors="coerce")
+    df[col_mes] = pd.to_numeric(df[col_mes], errors="coerce")
+    df[col_valor] = pd.to_numeric(df[col_valor], errors="coerce")
+    df = df.dropna(subset=[col_anio, col_mes, col_valor])
+    idx = pd.to_datetime({"year": df[col_anio].astype(int),
+                          "month": df[col_mes].astype(int), "day": 1})
+    return pd.Series(df[col_valor].values, index=idx).sort_index()
+
+
+def parsear_general_largo(ruta: Path) -> pd.Series:
+    """
+    'IPC gral y variaciones_base 2022.xlsx': serie oficial del IPC Total Pais
+    reexpresada en base octubre 2022 = 100 DESDE JULIO 1937. Fechas datetime
+    en col 0 (desde fila ~10), indice en col 1. Los valores iniciales son
+    minusculos (1.5e-7 en 1937) pero reales, no ceros.
+    """
+    df = pd.read_excel(ruta, sheet_name=0, header=None)
+    fechas = df.iloc[:, 0].map(_a_fecha)
+    valores = pd.to_numeric(df.iloc[:, 1], errors="coerce")
+    s = pd.Series(valores.values, index=fechas.values)
+    s = s[s.index.notna()].dropna()
+    s = s[s > 0]
+    s.index = pd.to_datetime(s.index)
+    return s.sort_index()
+
+
+def parsear_general_regiones(ruta: Path) -> dict[str, pd.Series]:
+    """
+    'IPC General_Total Pais_Montevideo_Interior_base 2022.xlsx', hoja
+    'Por región': Año | Mes | General Total Pais | Montevideo | Interior,
+    desde diciembre 2010.
+    """
+    df = pd.read_excel(ruta, sheet_name=0, header=None, skiprows=1,
+                       names=["anio", "mes", "tp", "mvd", "int"],
+                       usecols=range(5))
+    return {clave: _serie_anio_mes(df, "anio", "mes", col)
+            for clave, col in [("total_pais", "tp"),
+                               ("montevideo", "mvd"), ("interior", "int")]}
+
+
+def parsear_divisiones(ruta: Path) -> pd.DataFrame:
+    """
+    'IPC_Division_País_desde 2010_base 2022.xlsx': formato tidy
+    Año | Mes | División (1-13) | Indice Total País, desde diciembre 2010.
+    Devuelve DataFrame [fecha, division, indice] con division '01'..'13'.
+    """
+    df = pd.read_excel(ruta, sheet_name=0, header=None, skiprows=1,
+                       names=["anio", "mes", "div", "idx"], usecols=range(4))
+    df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
+    df["mes"] = pd.to_numeric(df["mes"], errors="coerce")
+    df["idx"] = pd.to_numeric(df["idx"], errors="coerce")
+    df["div"] = pd.to_numeric(df["div"], errors="coerce")
+    df = df.dropna(subset=["anio", "mes", "div", "idx"])
+    fecha = pd.to_datetime({"year": df["anio"].astype(int),
+                            "month": df["mes"].astype(int), "day": 1})
+    return pd.DataFrame({
+        "fecha": fecha.values,
+        "division": df["div"].astype(int).astype(str).str.zfill(2).values,
+        "indice": df["idx"].values,
+    }).sort_values(["division", "fecha"]).reset_index(drop=True)
+
+
+def parsear_subyacente(ruta: Path) -> pd.Series:
+    """
+    'IPC_Cuadro_inflación subyacente.xlsx': Año | Nombre_mes | Mes |
+    IPC_CE VFC | Var. Mes | Var. AA, desde octubre 2022. El IPC-CE excluye
+    frutas, verduras y combustibles. El mes en curso puede venir como fila
+    vacia pre-creada: se descarta.
+    """
+    df = pd.read_excel(ruta, sheet_name=0, header=None, skiprows=1,
+                       names=["anio", "nmes", "mes", "ipc_ce", "vm", "vaa"],
+                       usecols=range(6))
+    return _serie_anio_mes(df, "anio", "mes", "ipc_ce")
+
+
+# ---------------------------------------------------------------------
+# Parseo generico (fallback)
 # ---------------------------------------------------------------------
 def _a_fecha(valor) -> str | None:
     """Normaliza etiquetas de periodo del INE a primer dia del mes, ISO."""

@@ -25,8 +25,8 @@ import pandas as pd
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.etl import bcu_cotizaciones, fred_series, ine_ipc, licitaciones  # noqa: E402
-from src.etl import db  # noqa: E402
+from src.etl import bcu_cotizaciones, bcu_expectativas, bcu_imae, bcu_ipom, bcu_itcr, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
+from src.etl import db, descubrir_fuentes, descubrir_js, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 PROC = ROOT / "data" / "processed"
@@ -102,48 +102,93 @@ def etl_fred(con, desde: str) -> int:
     return total
 
 
+def _upsert_serie(con, var_id: str, s: pd.Series, fuente: str) -> int:
+    r = db.upsert_observaciones(
+        con, var_id, [(i.strftime("%Y-%m-%d"), v) for i, v in s.items()],
+        fuente=fuente)
+    print(f"[etl] {var_id}: {r}")
+    return r["nuevas"]
+
+
 @paso("ine_ipc")
 def etl_ipc(con) -> int:
-    archivos = ine_ipc.bajar_todo()
-    series_por_base: dict[str, pd.Series] = {}
-    for clave, rutas in archivos.items():
-        mejor = pd.Series(dtype=float)
-        for ruta in rutas:
-            s = ine_ipc.leer_indice(ruta)
-            if len(s) > len(mejor):
-                mejor = s
-        if len(mejor):
-            series_por_base[clave] = mejor
-            print(f"[etl] IPC {clave}: {len(mejor)} obs")
-        else:
+    """
+    Ingesta del IPC con parsers especificos por planilla (calibrados contra
+    los archivos reales, ver ine_ipc.py). Cada planilla falla aislada con
+    alerta; si ninguna parsea, la corrida del paso falla.
+    """
+    ine_ipc.bajar_todo()
+    base = ine_ipc.RAW / "base_2022_10"
+    total = 0
+    parseo_ok = False
+
+    def _intento(nombre, fragmentos, fn):
+        nonlocal parseo_ok
+        ruta = ine_ipc.buscar_archivo(base, *fragmentos)
+        if ruta is None:
             db.alerta(con, "estructura", "critica",
-                      f"No se pudo parsear ninguna planilla de {clave}. "
-                      f"El layout del INE probablemente cambio.",
+                      f"No se encontro la planilla de {nombre} en {base}. "
+                      f"El INE pudo haber renombrado el archivo.",
                       var_id="ipc_general_idx")
+            return None
+        try:
+            res = fn(ruta)
+            parseo_ok = True
+            return res
+        except Exception as e:                        # noqa: BLE001
+            db.alerta(con, "estructura", "critica",
+                      f"Fallo el parseo de {nombre} ({ruta.name}): {e}",
+                      var_id="ipc_general_idx")
+            return None
 
-    if not series_por_base:
-        raise RuntimeError("ninguna base del IPC pudo parsearse")
+    # 1. Serie oficial reexpresada base oct-2022 desde julio 1937.
+    #    Cumple el rol de la serie larga: no hace falta empalme propio.
+    largo = _intento("serie general larga", ("gral", "variaciones"),
+                     ine_ipc.parsear_general_largo)
+    if largo is not None and len(largo):
+        total += _upsert_serie(
+            con, "ipc_general_empalmado", largo,
+            "INE, serie oficial reexpresada base oct-2022=100 (desde 1937)")
 
-    # Serie de la base vigente, tal cual la publica el INE
-    vigente = series_por_base.get("base_2022_10")
-    if vigente is not None and len(vigente):
-        db.upsert_observaciones(
-            con, "ipc_general_idx",
-            [(i.strftime("%Y-%m-%d"), v) for i, v in vigente.items()],
-            fuente="INE base oct-2022=100")
+    # 2. IPC general Total Pais (y control regional) desde dic-2010
+    regiones = _intento("general por region", ("general_total",),
+                        ine_ipc.parsear_general_regiones)
+    if regiones and len(regiones.get("total_pais", [])):
+        total += _upsert_serie(con, "ipc_general_idx", regiones["total_pais"],
+                               "INE base oct-2022=100")
+        # control cruzado contra la serie larga
+        if largo is not None and len(largo):
+            comun = regiones["total_pais"].index.intersection(largo.index)
+            dif = (regiones["total_pais"][comun] - largo[comun]).abs().max()
+            if dif > 0.01:
+                db.alerta(con, "estructura", "warning",
+                          f"Serie regiones vs. serie larga difieren hasta "
+                          f"{dif:.4f} puntos de indice", var_id="ipc_general_idx")
 
-    # Serie empalmada desde 1997, expresada en la base vigente
-    empalmada = ine_ipc.empalmar(series_por_base)
-    r = db.upsert_observaciones(
-        con, "ipc_general_empalmado",
-        [(i.strftime("%Y-%m-%d"), v) for i, v in empalmada.items()],
-        fuente="INE (empalme por variacion mensual)")
-    print(f"[etl] IPC empalmado: {len(empalmada)} obs "
-          f"desde {empalmada.index.min().date() if len(empalmada) else '-'}")
+    # 3. Divisiones COICOP 01-13 desde dic-2010
+    divisiones = _intento("divisiones", ("division", "pais"),
+                          ine_ipc.parsear_divisiones)
+    if divisiones is not None and len(divisiones):
+        for cod, grupo in divisiones.groupby("division"):
+            s = pd.Series(grupo["indice"].values,
+                          index=pd.DatetimeIndex(grupo["fecha"]))
+            total += _upsert_serie(con, f"ipc_div_{cod}", s,
+                                   "INE base oct-2022=100, division CCIF")
 
-    PROC.mkdir(parents=True, exist_ok=True)
-    empalmada.to_frame("ipc").to_parquet(PROC / "ipc_empalmado.parquet")
-    return r["nuevas"]
+    # 4. Nucleo oficial IPC-CE (excluye frutas, verduras y combustibles)
+    nucleo = _intento("IPC-CE (subyacente)", ("subyacente",),
+                      ine_ipc.parsear_subyacente)
+    if nucleo is not None and len(nucleo):
+        total += _upsert_serie(con, "ipc_subyacente_idx", nucleo,
+                               "INE IPC-CE base oct-2022=100")
+
+    if not parseo_ok:
+        raise RuntimeError("ninguna planilla del IPC pudo parsearse")
+
+    if largo is not None and len(largo):
+        PROC.mkdir(parents=True, exist_ok=True)
+        largo.to_frame("ipc").to_parquet(PROC / "ipc_empalmado.parquet")
+    return total
 
 
 @paso("licitaciones")
@@ -162,13 +207,149 @@ def etl_licitaciones(con) -> int:
     return n
 
 
+@paso("ine_ims")
+def etl_ims(con) -> int:
+    """IMS nominal (dic-2002+) e IMS general largo (1968+)."""
+    ine_ims.bajar()
+    resultado = ine_ims.series()
+    if not resultado:
+        raise RuntimeError("ninguna planilla del IMS pudo parsearse")
+    total = 0
+    fuentes = {"salario_nominal_ims": "INE IMSN base jul-2008=100",
+               "ims_general_idx": "INE IMS general base jul-2008=100 (desde 1968)"}
+    for var_id, s in resultado.items():
+        total += _upsert_serie(con, var_id, s, fuentes[var_id])
+    return total
+
+
+@paso("bcu_tpm_ipom")
+def etl_tpm(con) -> int:
+    """
+    TPM vigente extraida del ultimo IPOM archivado por el paso de
+    descubrimiento. No es una serie mensual real (ver docstring de
+    bcu_ipom.py): un punto por trimestre, con fecha_ref aproximada.
+    """
+    resultado = bcu_ipom.valor_vigente()
+    if resultado is None:
+        raise RuntimeError("no se encontro TPM parseable en ningun IPOM archivado")
+    fecha_ref, valor, ruta = resultado
+    r = db.upsert_observaciones(
+        con, "tpm_bcu", [(fecha_ref, valor)],
+        fuente=f"BCU IPOM ({ruta.name}), extraccion de texto del Resumen Ejecutivo")
+    print(f"[etl] tpm_bcu: {valor}% en {fecha_ref} ({r})")
+    return r["nuevas"]
+
+
+@paso("bcu_expectativas")
+def etl_expectativas(con) -> int:
+    """
+    Mediana de expectativas de inflacion a 12/24m, extraida de HTML
+    estatico (no requiere navegador -- ver docstring de bcu_expectativas.py).
+    Solo el valor vigente al momento de la consulta: la serie se construye
+    hacia adelante, un punto por corrida mensual.
+    """
+    resultado = bcu_expectativas.valor_vigente()
+    if not resultado:
+        raise RuntimeError("no se encontro el bloque de expectativas en la pagina del BCU")
+    mes_ref = resultado.get("mes_referencia", db.hoy())
+    total = 0
+    for horizonte, var_id in [("12", "expectativas_inflacion_12m"),
+                             ("24", "expectativas_inflacion_24m")]:
+        if horizonte not in resultado:
+            continue
+        r = db.upsert_observaciones(
+            con, var_id, [(mes_ref, resultado[horizonte])],
+            fuente="BCU, Expectativas de los agentes (encuesta a analistas)")
+        print(f"[etl] {var_id}: {resultado[horizonte]}% en {mes_ref} ({r})")
+        total += r["nuevas"]
+    return total
+
+
+@paso("bcu_imae")
+def etl_imae(con) -> int:
+    """
+    IMAE (original, desestacionalizado, tendencia-ciclo), extraido de un
+    HTML estatico que embebe graficos Plotly con la serie completa --
+    ver docstring de bcu_imae.py. A diferencia de expectativas/TPM, ESTA
+    si es la serie historica completa, no solo el valor vigente.
+    """
+    resultado = bcu_imae.series()
+    if not resultado:
+        raise RuntimeError("no se encontro ningun widget de IMAE en la pagina del BCU")
+    total = 0
+    for var_id, s in resultado.items():
+        total += _upsert_serie(con, var_id, s, "BCU, IMAE-graficas.html (Plotly/R)")
+    return total
+
+
+@paso("bcu_itcr")
+def etl_itcr(con) -> int:
+    """
+    ITCR Global/Extrarregional/Regional, replicando sin navegador el
+    flujo de tres pedidos que usa el eportal (guest -> render_portlet ->
+    processCommands) contra el motor BI de terceros -- ver docstring de
+    bcu_itcr.py. Fragil por diseño: si el widget cambia de estructura,
+    este paso falla con una alerta clara en vez de corromper datos.
+    """
+    resultado = bcu_itcr.series()
+    fuentes = {"TCRE - Global": "itcr_global", "TCRE - Extrarregional": "itcr_extrarregional",
+               "TCRE - Regional": "itcr_regional"}
+    total = 0
+    for nombre, s in resultado.items():
+        var_id = fuentes.get(nombre)
+        if var_id is None:
+            continue
+        total += _upsert_serie(con, var_id, s, "BCU, eportal TCRE (motor O3 BI)")
+    return total
+
+
+@paso("descubrimiento_fuentes")
+def etl_descubrimiento(con) -> int:
+    """
+    Archiva paginas y planillas de las fuentes prioridad A que aun no
+    tienen ingestor (expectativas BCU, ITCR, TPM, IMS, combustibles).
+    Los crudos versionados permiten calibrar los parsers sin red.
+    """
+    resumenes = descubrir_fuentes.descubrir_todo()
+    total = 0
+    for r in resumenes:
+        if r["pagina"] is None:
+            db.alerta(con, "estructura", "warning",
+                      f"Descubrimiento de {r['clave']}: ninguna URL candidata "
+                      f"respondio. Actualizar FUENTES en descubrir_fuentes.py.")
+        total += r["planillas"]
+    return total
+
+
+@paso("descubrimiento_fuentes_js")
+def etl_descubrimiento_js(con) -> int:
+    """
+    Igual que etl_descubrimiento pero con Chromium headless (Playwright)
+    para expectativas_bcu_js e itcr_bcu_js: confirmado (ver
+    docs/manifest_fuentes.md) que esas paginas solo muestran el dato
+    despues de ejecutar JavaScript -- requests.get() nunca lo va a ver.
+    """
+    resumenes = descubrir_js.descubrir_todo_js()
+    total = 0
+    for r in resumenes:
+        if r["html"] is None:
+            db.alerta(con, "estructura", "warning",
+                      f"Descubrimiento JS de {r['clave']}: no se pudo renderizar "
+                      f"la pagina. Revisar la URL en descubrir_js.py.")
+        total += r["planillas"] + r["tablas"]
+    return total
+
+
 # ---------------------------------------------------------------------
 def controles(con) -> None:
     """Chequeos de frescura y de rango. Alertan, no abortan."""
     hoy = dt.date.today()
     limites = {
         "tc_usduyu_interbancario": 5,
-        "ipc_general_idx": 45,
+        # fecha_ref es el primer dia del mes: el dato de julio se publica
+        # ~5 de agosto y recien esta "vencido" cuando falta el de agosto
+        # (~5 de setiembre) => tolerancia ~70 dias desde la fecha_ref.
+        "ipc_general_idx": 70,
         "usdbrl": 7,
         "ust_10y": 7,
         "brent": 7,
@@ -247,8 +428,9 @@ def main() -> None:
     db.respaldar()
     db.inicializar()
     con = db.conectar()
+    n_vars = seed.sembrar_variables(con)
     t0 = time.time()
-    print(f"[etl] modo={args.modo} desde={desde}")
+    print(f"[etl] modo={args.modo} desde={desde} ({n_vars} variables sembradas)")
 
     try:
         etl_tc(con, desde)
@@ -258,6 +440,13 @@ def main() -> None:
             etl_licitaciones(con)
         if args.modo in ("mensual", "historico"):
             etl_ipc(con)
+            etl_ims(con)
+            etl_expectativas(con)
+            etl_imae(con)
+            etl_itcr(con)
+            etl_descubrimiento(con)
+            etl_descubrimiento_js(con)
+            etl_tpm(con)
 
         controles(con)
         resumen(con)

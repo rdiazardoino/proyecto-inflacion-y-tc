@@ -1,0 +1,78 @@
+name: Analisis mensual
+
+# Corre DESPUES del ETL mensual (ver etl.yml, dia 5 13:00 UTC): backtest,
+# ensemble, escenarios, dashboard e informe -- el pipeline completo que
+# hasta el 4-sep-2026 se disparaba a mano (ver docs/manual_operativo.md).
+# 90 minutos de margen sobre el horario del ETL para que termine y
+# commitee antes de que este workflow arranque (el checkout toma lo que
+# el ETL ya haya subido).
+
+on:
+  schedule:
+    # Dia 5 de cada mes 14:30 UTC ~ 11:30 Montevideo.
+    - cron: "30 14 5 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: analisis
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  analisis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # weasyprint (PDF del informe) necesita Pango/Cairo del sistema --
+      # sin esto genera igual el HTML, el paso de PDF queda deshabilitado
+      # solo (ver el try/except en build_informe.py).
+      - name: Instalar dependencias del sistema (weasyprint)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 \
+            libffi-dev shared-mime-info fonts-dejavu-core
+
+      - name: Instalar dependencias de Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Correr el pipeline de analisis
+        run: python src/forecast/run_forecast.py
+
+      - name: Commitear resultados (backtest, ensemble, escenarios)
+        run: |
+          git config user.name  "analisis-bot"
+          git config user.email "analisis-bot@users.noreply.github.com"
+          git add -A db/proyecto.db
+          if git diff --staged --quiet; then
+            echo "sin cambios"
+          else
+            git commit -m "analisis mensual $(date -u +%Y-%m-%d)"
+            git pull --rebase --autostash origin ${{ github.ref_name }} || true
+            git push
+          fi
+
+      # dashboard/informe NO se versionan (ver .gitignore: se regeneran
+      # cada corrida) -- quedan como artefacto descargable del run.
+      - name: Publicar dashboard e informe como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analisis-${{ github.run_number }}
+          path: |
+            outputs/dashboards/**
+            outputs/informes/**
+          retention-days: 90
+          if-no-files-found: warn

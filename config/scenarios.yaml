@@ -1,0 +1,84 @@
+# Sesion 5 - Escenarios (plan Seccion 10).
+#
+# Definidos como SENDAS de las exogenas, no como ajustes ad-hoc del
+# resultado: el mismo modelo (VAR(2) reducido, ver src/models/var_tc.py)
+# recorre las tres sendas -> la coherencia interna entre TC e inflacion es
+# automatica (ambas salen del mismo sistema).
+#
+# Las sendas son JUICIO DOCUMENTADO, no un output estadistico: no hay BVAR
+# con TPM para derivar frecuencias simuladas (la TPM tiene un solo punto
+# historico, ver src/etl/bcu_ipom.py) ni Encuesta de Expectativas para
+# calibrar el sesgo direccional del consenso de mercado (bloqueada, ver
+# docs/manifest_fuentes.md). Revisar manualmente cuando esos datos existan.
+#
+# Cada Delta es log-diff % MENSUAL, aplicado CONSTANTE en todos los meses
+# del horizonte (h=1..24). No es la unica forma de definir una senda, pero
+# es la mas simple y transparente para un v1.
+
+meta:
+  fecha_definicion: "2026-09-03"
+  vehiculo: "var2_reducido"   # unico modelo usado para escenarios: el que
+                              # tiene TC, BRL y DXY como variables del sistema
+  nota: >
+    Los escenarios son una herramienta de sensibilidad direccional, NO el
+    pronostico oficial del sistema: var2_reducido es un challenger que no
+    le gano al benchmark en el backtest de la sesion 4. El pronostico
+    oficial sigue siendo el ensemble de benchmarks (src/models/ensemble.py).
+
+escenarios:
+  base:
+    nombre: "Base"
+    probabilidad: 0.60
+    supuestos:
+      dbrl_mensual: 0.0      # USD/BRL sin tendencia (sin novedad)
+      ddxy_mensual: 0.0      # DXY sin tendencia
+    justificacion: >
+      Continuidad del regimen actual: BCU sostiene la TPM en 5.75% (IPOM
+      1T-2026), inflacion dentro del rango meta, sin shocks identificados
+      en el horizonte de politica.
+    senales_confirmacion:
+      - "TPM del BCU sin cambios en las proximas 2-3 reuniones del Copom"
+      - "USD/BRL se mantiene dentro de +/-3% del nivel actual"
+      - "Inflacion a/a de Uruguay permanece dentro del rango 3-6%"
+      - "Sin novedades en el conflicto de Medio Oriente que afecten Brent"
+
+  benigno:
+    nombre: "Benigno (apreciacion regional / dolar global debil)"
+    probabilidad: 0.20
+    supuestos:
+      dbrl_mensual: 0.3      # real brasileno se aprecia (USD/BRL baja ~0.3%/mes)
+      ddxy_mensual: -0.3     # dolar global se debilita
+    justificacion: >
+      Canal regional dominante (plan Seccion 5.3): un real mas fuerte
+      típicamente acompaña al peso uruguayo. Un DXY mas debil alivia la
+      inflacion importada. Escenario de "buenas noticias externas", no de
+      cambio de politica local.
+    senales_confirmacion:
+      - "USD/BRL cae de forma sostenida por 2+ meses"
+      - "DXY por debajo de su nivel de inicio del horizonte"
+      - "Brent en baja o estable"
+      - "Flujos hacia emergentes en aumento (proxy: VIX bajo)"
+
+  adverso:
+    nombre: "Adverso (depreciacion regional / dolar global fuerte)"
+    probabilidad: 0.20
+    supuestos:
+      dbrl_mensual: -0.3     # real se deprecia (USD/BRL sube ~0.3%/mes)
+      ddxy_mensual: 0.3      # dolar global se fortalece
+    justificacion: >
+      Espejo del benigno: deterioro del contexto regional/global via el
+      canal cambiario, con presion adicional de inflacion importada.
+    senales_confirmacion:
+      - "USD/BRL sube de forma sostenida por 2+ meses"
+      - "DXY por encima de su nivel de inicio del horizonte"
+      - "Brent en suba sostenida (tension geopolitica, oferta)"
+      - "VIX elevado / aversion al riesgo en aumento"
+
+# Brent: mismo signo economico que el escenario (favorable = petroleo mas
+# barato via menor inflacion importada), pero definido aparte porque no es
+# una variable del VAR(2) -- se usa solo para el vehiculo secundario
+# (sarimax_topdown) si se lo requiere en una iteracion futura.
+brent_mensual:
+  base: 0.0
+  benigno: -1.0
+  adverso: 1.0

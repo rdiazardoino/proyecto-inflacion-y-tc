@@ -1,0 +1,42 @@
+[
+ {
+  "tag": "A",
+  "texto": "Skip to content",
+  "x": -1,
+  "y": -160001,
+  "w": 1,
+  "h": 1
+ },
+ {
+  "tag": "A",
+  "texto": "Calendario tentativo de colocación de títulos",
+  "x": 788,
+  "y": 125,
+  "w": 369,
+  "h": 40
+ },
+ {
+  "tag": "A",
+  "texto": "Vector de Precios",
+  "x": 878,
+  "y": 165,
+  "w": 189,
+  "h": 40
+ },
+ {
+  "tag": "A",
+  "texto": "Tasa 1 día",
+  "x": 904,
+  "y": 205,
+  "w": 137,
+  "h": 40
+ },
+ {
+  "tag": "A",
+  "texto": "Seguir leyendo",
+  "x": 630,
+  "y": 476,
+  "w": 124,
+  "h": 33
+ }
+]

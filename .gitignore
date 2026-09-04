@@ -22,3 +22,10 @@ outputs/informes/*
 data/raw/**/*.xls
 data/raw/**/*.xlsx
 data/raw/**/*.pdf
+# Excepcion: las planillas del INE SI se versionan. Son el archivo de
+# vintages del IPC (~1-2 MB/mes) y el sandbox de analisis no puede
+# descargarlas por si mismo (sin red a ine.gub.uy) ni bajar artifacts
+# de Actions (proxy bloquea *.blob.core.windows.net).
+!data/raw/ine/**
+!data/raw/descubrimiento/**
+!data/raw/ims/**

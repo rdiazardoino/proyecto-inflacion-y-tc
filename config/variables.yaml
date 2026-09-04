@@ -134,13 +134,63 @@ inflacion:
     prioridad: importante
 
   - var_id: imae
-    nombre: "Indicador mensual de actividad economica"
+    nombre: "IMAE desestacionalizado (IVF, base 2016=100)"
     fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Documents/IMAE-graficas.html"
+    metodo_acceso: "HTML estatico (no requiere navegador headless -- confirmado 4-sep-2026). Reporte R/knitr con graficos Plotly embebidos como <script type='application/json' data-for='htmlwidget-...'>; el JSON trae el nivel del indice completo por trace (src/etl/bcu_imae.py). Se usa la version desestacionalizada: un HP filter sobre una serie con estacionalidad adentro confundiria estacionalidad con ciclo."
     frecuencia: M
     rezago_dias: 45
     transformacion: [pct_yoy, brecha_hp]
     hipotesis_econ: "Proxy mensual de brecha de producto para la curva de Phillips."
     modelo_destino: ambos
+    prioridad: importante
+
+  - var_id: imae_original_idx
+    nombre: "IMAE original (IVF, base 2016=100, sin desestacionalizar)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Documents/IMAE-graficas.html"
+    metodo_acceso: "Igual que 'imae', mismo archivo, otro trace del Plotly."
+    frecuencia: M
+    rezago_dias: 45
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Control cruzado del IMAE desestacionalizado."
+    modelo_destino: ambos
+    prioridad: complementaria
+
+  - var_id: imae_tendencia_ciclo_idx
+    nombre: "IMAE tendencia-ciclo (IVF, base 2016=100)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Documents/IMAE-graficas.html"
+    metodo_acceso: "Igual que 'imae', mismo archivo, otro trace del Plotly."
+    frecuencia: M
+    rezago_dias: 45
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Version ya filtrada por el BCU (sin el ruido de alta frecuencia de la serie SA) -- alternativa a aplicar un HP filter propio."
+    modelo_destino: ambos
+    prioridad: complementaria
+
+  - var_id: expectativas_inflacion_12m
+    nombre: "Mediana de expectativas de inflacion a 12 meses (Encuesta BCU)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx"
+    metodo_acceso: "HTML estatico (no requiere navegador headless -- confirmado 3-sep-2026, a diferencia de ITCR/TPM historica). Valor extraido de un bloque JSON embebido en un <script> del widget 'BCUSliderWebPart' (src/etl/bcu_expectativas.py). Solo el valor vigente al momento de la consulta, no la serie historica -- se construye hacia adelante corriendo el ETL mensual."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [nivel]
+    hipotesis_econ: "Ancla de expectativas para la curva de Phillips (forward-looking) y para evaluar si el ensemble se aleja de lo que esperan los analistas."
+    modelo_destino: inflacion
+    prioridad: importante
+
+  - var_id: expectativas_inflacion_24m
+    nombre: "Mediana de expectativas de inflacion a 24 meses (Encuesta BCU)"
+    fuente: BCU
+    fuente_url: "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx"
+    metodo_acceso: "Igual que expectativas_inflacion_12m, mismo bloque JSON."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [nivel]
+    hipotesis_econ: "Horizonte de politica del BCU (el que mas le importa al Copom)."
+    modelo_destino: inflacion
     prioridad: importante
 
 # ---------------------------------------------------------------------
@@ -180,6 +230,42 @@ tipo_cambio:
     modelo_destino: ambos
     prioridad: indispensable
 
+  - var_id: itcr_global
+    nombre: "Indice de Tipo de Cambio Real Efectivo Global (base 2017=100)"
+    fuente: BCU
+    fuente_url: "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"
+    metodo_acceso: "El eportal Liferay necesita un navegador para RENDERIZAR, pero el dato llega por tres pedidos HTTP encadenados a un motor BI de terceros (guest -> render_portlet -> processCommands, ver src/etl/bcu_itcr.py) -- no hace falta Playwright, solo requests con sesion (cookies). Fragil por depender de la estructura interna de ese widget."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Competitividad cambiaria agregada, mide desalineamiento del TC nominal respecto de fundamentos."
+    modelo_destino: tc
+    prioridad: complementaria
+
+  - var_id: itcr_extrarregional
+    nombre: "Indice de Tipo de Cambio Real Efectivo Extrarregional (base 2017=100)"
+    fuente: BCU
+    fuente_url: "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"
+    metodo_acceso: "Igual que itcr_global, misma consulta."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Competitividad frente a socios fuera de la region (principalmente EEUU/Europa/Asia)."
+    modelo_destino: tc
+    prioridad: complementaria
+
+  - var_id: itcr_regional
+    nombre: "Indice de Tipo de Cambio Real Efectivo Regional (base 2017=100)"
+    fuente: BCU
+    fuente_url: "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"
+    metodo_acceso: "Igual que itcr_global, misma consulta."
+    frecuencia: M
+    rezago_dias: 30
+    transformacion: [pct_yoy]
+    hipotesis_econ: "Competitividad frente a Argentina y Brasil -- el canal mas directo del pass-through regional."
+    modelo_destino: tc
+    prioridad: complementaria
+
   - var_id: usdbrl
     nombre: "USD/BRL"
     fuente: FRED
@@ -209,6 +295,26 @@ tipo_cambio:
     hipotesis_econ: "Condiciones financieras globales; base del diferencial de tasas."
     modelo_destino: tc
     prioridad: indispensable
+
+  - var_id: ust_2y
+    nombre: "Rendimiento Treasury 2 anos"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual, diff]
+    hipotesis_econ: "Tramo corto de la curva americana; ancla del diferencial de tasas a 1-2 anos."
+    modelo_destino: tc
+    prioridad: importante
+
+  - var_id: ust_3m
+    nombre: "Rendimiento T-Bill 3 meses"
+    fuente: FRED
+    frecuencia: D
+    rezago_dias: 1
+    transformacion: [prom_mensual, diff]
+    hipotesis_econ: "Tasa corta USD para el carry y el forward por paridad cubierta."
+    modelo_destino: tc
+    prioridad: importante
 
   - var_id: fed_funds
     nombre: "Fed funds effective rate"

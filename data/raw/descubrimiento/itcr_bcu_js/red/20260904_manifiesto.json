@@ -1,0 +1,11 @@
+[
+ {
+  "archivo": "20260904_000_tcre.json",
+  "url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre",
+  "metodo": "GET",
+  "post_data": null,
+  "content_type": "text/html; charset=iso-8859-1",
+  "status": 503,
+  "bytes": 299
+ }
+]
