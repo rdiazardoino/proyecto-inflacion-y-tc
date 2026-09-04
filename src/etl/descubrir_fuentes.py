@@ -100,14 +100,27 @@ FUENTES: dict[str, list[str]] = {
         "https://www.ine.gub.uy/precios-de-servicios-publicos",
     ],
     "imae_bcu": [
+        # CONFIRMADO 3-sep-2026: encontrado como <a href> real (no SPA) al
+        # archivar el candidato generico "default.aspx" -- el enlace de
+        # "Indicador Mensual de Actividad Economica" apunta aca.
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Cuentas-Nacionales-e-Internacionales.aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Indicador-Actividad-Economica.aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/IMAE.aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Cuentas-Nacionales.aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/default.aspx",
     ],
     "tpm_historica_bcu": [
+        # hallado el 3-sep-2026 dentro del propio HTML archivado de
+        # Comite-de-Politica-Monetaria.aspx: un enlace de "interes" real a
+        # "Comunicados del Copom (2007-2021)" -- pero apuntando a
+        # http://portalweb/... (host interno del BCU, roto en su propio
+        # sitio publico). Se prueba la ruta equivalente en el dominio
+        # publico, mas la variante del periodo vigente.
+        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Comunicados-2007-2021.aspx",
+        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Comunicados-2022-2026.aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tasa-de-Politica-Monetaria.aspx",
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Mercado-de-Dinero.aspx",
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Moneda-y-credito.aspx",
         "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Comite-de-Politica-Monetaria.aspx",
     ],
 }

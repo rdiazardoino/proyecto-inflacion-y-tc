@@ -17,7 +17,12 @@ Por pagina se archiva:
   2. cualquier planilla enlazada que solo aparece en el DOM post-render,
   3. las tablas HTML visibles, volcadas a CSV via pandas.read_html --
      frecuente en portales Liferay que muestran el dato en una tabla en
-     vez de ofrecer una planilla descargable.
+     vez de ofrecer una planilla descargable,
+  4. una captura de pantalla full-page y un listado de elementos
+     clickeables (texto + posicion) -- el sandbox de analisis no puede
+     VER el render real (solo el HTML crudo), asi que para calibrar un
+     click en algo que no es un <a href> (un icono de exportar dibujado
+     en <canvas>, un menu que requiere hover) hace falta la imagen.
 
 No asume la estructura final del dato: eso se calibra en una iteracion
 futura contra los archivos reales.
@@ -27,6 +32,7 @@ from __future__ import annotations
 
 import datetime as dt
 import io
+import json
 import re
 from pathlib import Path
 from urllib.parse import unquote
@@ -98,6 +104,34 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
         destino_html = subdir / f"{dt.date.today():%Y%m%d}_render.html"
         destino_html.write_text(html, encoding="utf-8")
         resumen["html"] = str(destino_html)
+
+        # captura visual + mapa de elementos clickeables: unica forma de
+        # calibrar un click en algo que no es <a href> (icono en canvas,
+        # menu por hover) sin poder ver el render real desde el sandbox.
+        try:
+            destino_png = subdir / f"{dt.date.today():%Y%m%d}_screenshot.png"
+            pagina.screenshot(path=str(destino_png), full_page=True, timeout=timeout_ms)
+        except Exception as e:                            # noqa: BLE001
+            print(f"[desc-js] {clave}: fallo screenshot: {e}")
+
+        try:
+            clickeables = pagina.eval_on_selector_all(
+                "a, button, [role=button], [onclick], [title], [aria-label]",
+                """els => els.filter(e => {
+                    const r = e.getBoundingClientRect();
+                    return r.width > 0 && r.height > 0;
+                }).map(e => {
+                    const r = e.getBoundingClientRect();
+                    return {tag: e.tagName, texto: (e.innerText || e.getAttribute('title') ||
+                            e.getAttribute('aria-label') || '').trim().slice(0, 80),
+                            x: Math.round(r.x), y: Math.round(r.y),
+                            w: Math.round(r.width), h: Math.round(r.height)};
+                })""")
+            destino_json = subdir / f"{dt.date.today():%Y%m%d}_clickeables.json"
+            destino_json.write_text(json.dumps(clickeables, ensure_ascii=False, indent=1),
+                                    encoding="utf-8")
+        except Exception as e:                            # noqa: BLE001
+            print(f"[desc-js] {clave}: fallo mapa de clickeables: {e}")
 
         # enlaces a planillas visibles DESPUES del render -- antes del JS
         # estos <a> no existen en el DOM, por eso requests.get() no los ve.
