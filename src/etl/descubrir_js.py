@@ -151,8 +151,19 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
             print(f"[desc-js] {clave}: fallo mapa de clickeables: {e}")
 
         if clic_coordenadas:
+            x, y = clic_coordenadas
             try:
-                x, y = clic_coordenadas
+                # primero HOVER (sin click): varios widgets de este tipo
+                # solo muestran el menu mientras el mouse esta encima, no
+                # tras un click -- se prueban las dos hipotesis en la misma
+                # corrida para no gastar otra.
+                pagina.mouse.move(x, y)
+                pagina.wait_for_timeout(1000)
+                destino_hover = subdir / f"{dt.date.today():%Y%m%d}_screenshot_hover.png"
+                pagina.screenshot(path=str(destino_hover), full_page=True, timeout=timeout_ms)
+            except Exception as e:                        # noqa: BLE001
+                print(f"[desc-js] {clave}: fallo hover en {clic_coordenadas}: {e}")
+            try:
                 pagina.mouse.click(x, y)
                 pagina.wait_for_timeout(1500)
                 destino_png2 = subdir / f"{dt.date.today():%Y%m%d}_screenshot_post_click.png"

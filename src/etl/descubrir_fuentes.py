@@ -100,6 +100,12 @@ FUENTES: dict[str, list[str]] = {
         "https://www.ine.gub.uy/precios-de-servicios-publicos",
     ],
     "imae_bcu": [
+        # CONFIRMADO 4-sep-2026: la pagina del informe (candidata de abajo)
+        # embebe un <iframe> a un HTML estatico separado con las graficas
+        # -- "Visor de paginas", src="/Estadisticas-e-Indicadores/
+        # Documents/IMAE-graficas.html". Va primero: mas probable que
+        # traiga los datos limpios sin el cascaron de SharePoint.
+        "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Documents/IMAE-graficas.html",
         # CONFIRMADO 4-sep-2026: encontrado como <a href> real (no SPA)
         # dentro de Cuentas-Nacionales-e-Internacionales.aspx (que a su vez
         # se encontro el 3-sep-2026 desde "default.aspx") -- el bloque
