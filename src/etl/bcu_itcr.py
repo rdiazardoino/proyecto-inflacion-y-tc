@@ -45,7 +45,9 @@ silencio -- no es peor que el estado actual (sin ingestor).
 
 from __future__ import annotations
 
+import json
 import re
+import urllib.parse
 
 import pandas as pd
 
@@ -119,19 +121,46 @@ def _pares_portlet_col(html_guest: str) -> list[dict]:
     return pares
 
 
-def _obtener_ticket_y_view(pagina, cfg: dict, timeout_ms: int) -> tuple[str, str]:
-    """`pagina`: Playwright Page ya navegada al guest -- se usa pagina.request
-    (comparte cookies con la pagina) en vez de una sesion de requests aparte."""
+_FETCH_POST_JS = """
+async ({url, body}) => {
+    const resp = await fetch(url, {
+        method: "POST",
+        headers: body ? {"Content-Type": "application/x-www-form-urlencoded"} : {},
+        body: body || undefined,
+        credentials: "same-origin",
+    });
+    const texto = await resp.text();
+    return {status: resp.status, texto: texto};
+}
+"""
+
+
+def _fetch_post(pagina, url: str, params: dict, formulario: dict | None) -> str:
+    """
+    POST ejecutado DESDE DENTRO de la pagina (pagina.evaluate + fetch), no
+    desde el contexto de pedidos de Playwright -- asi hereda Referer,
+    Origin y cookies exactamente como el navegador real (que es como se
+    capturaron estas llamadas originalmente). Bug real encontrado en
+    produccion: con pagina.request.post() (fuera de la pagina) el ultimo
+    paso (processCommands) devolvia 401 -- faltaba algo que un fetch()
+    real desde adentro de la pagina manda solo, no reproducido a mano.
+    """
+    url_completa = f"{url}?{urllib.parse.urlencode(params)}"
+    cuerpo = urllib.parse.urlencode(formulario) if formulario else None
+    resultado = pagina.evaluate(_FETCH_POST_JS, {"url": url_completa, "body": cuerpo})
+    if resultado["status"] >= 400:
+        raise RuntimeError(f"{url}: HTTP {resultado['status']}")
+    return resultado["texto"]
+
+
+def _obtener_ticket_y_view(pagina, cfg: dict) -> tuple[str, str]:
     params = {
         "p_l_id": cfg["p_l_id"], "p_p_id": cfg["portlet_id"], "p_p_lifecycle": "0",
         "p_t_lifecycle": "0", "p_p_state": "normal", "p_p_mode": "view",
         "p_p_col_id": cfg["col_id"], "p_p_col_pos": "0", "p_p_col_count": "1",
         "p_p_isolated": "1", "currentURL": "/eportal/web/guest/tcre",
     }
-    r = pagina.request.post(URL_RENDER_PORTLET, params=params, timeout=timeout_ms)
-    if not r.ok:
-        raise RuntimeError(f"render_portlet respondio {r.status}")
-    texto = r.text()
+    texto = _fetch_post(pagina, URL_RENDER_PORTLET, params, None)
     m_ticket = _PATRON_TICKET.search(texto)
     m_view = _PATRON_VIEW.search(texto)
     if not m_ticket or not m_view:
@@ -139,7 +168,7 @@ def _obtener_ticket_y_view(pagina, cfg: dict, timeout_ms: int) -> tuple[str, str
     return m_ticket.group(1), m_view.group(1)
 
 
-def _consultar_grid(pagina, cfg: dict, ticket: str, view: str, timeout_ms: int) -> dict:
+def _consultar_grid(pagina, cfg: dict, ticket: str, view: str) -> dict:
     params = {
         "p_p_id": cfg["portlet_id"], "p_p_lifecycle": "2", "p_p_state": "normal",
         "p_p_mode": "view", "p_p_resource_id": "processCommands",
@@ -147,18 +176,14 @@ def _consultar_grid(pagina, cfg: dict, ticket: str, view: str, timeout_ms: int) 
         "p_p_col_count": "1",
         f"_{cfg['portlet_id']}_resource-name": "processCommands",
     }
-    # 'form' (no 'data'): x-www-form-urlencoded, igual que el POST real del
-    # navegador -- 'data' en Playwright serializa a JSON por defecto.
     formulario = {
         "senchapost": "true",
         "queryCommand": _QUERY_TEMPLATE.format(view=view),
         "username": "guest", "password": ticket,
         "x-rest-locale": "en_US", "typeAccept": "application/is-grid+json", "export": "false",
     }
-    r = pagina.request.post(URL_GUEST, params=params, form=formulario, timeout=timeout_ms)
-    if not r.ok:
-        raise RuntimeError(f"processCommands respondio {r.status}")
-    return r.json()
+    texto = _fetch_post(pagina, URL_GUEST, params, formulario)
+    return json.loads(texto)
 
 
 def _series_del_grid(resultado: dict) -> dict[str, pd.Series]:
@@ -189,7 +214,9 @@ def series(timeout_ms: int = 60_000) -> dict[str, pd.Series]:
     El paso 1 (encontrar los portlets) necesita un navegador real -- el
     portlet se inserta en el DOM por una llamada AJAX que Liferay dispara
     al cargar, un GET plano nunca la ejecuta (ver docstring del modulo).
-    Los pasos 2 y 3 reusan el contexto de pedidos de esa misma pagina.
+    Los pasos 2 y 3 corren DENTRO de esa misma pagina (fetch() via
+    pagina.evaluate) para heredar Referer/Origin/cookies igual que el
+    navegador real -- ver docstring de _fetch_post.
     """
     from playwright.sync_api import sync_playwright  # import diferido: pesado, solo hace falta aca
 
@@ -206,8 +233,8 @@ def series(timeout_ms: int = 60_000) -> dict[str, pd.Series]:
             errores = []
             for cfg in pares:
                 try:
-                    ticket, view = _obtener_ticket_y_view(pagina, cfg, timeout_ms)
-                    resultado = _consultar_grid(pagina, cfg, ticket, view, timeout_ms)
+                    ticket, view = _obtener_ticket_y_view(pagina, cfg)
+                    resultado = _consultar_grid(pagina, cfg, ticket, view)
                     candidatos.append(_series_del_grid(resultado))
                 except Exception as e:                            # noqa: BLE001
                     errores.append(f"{cfg['portlet_id']}: {type(e).__name__}: {e}")
