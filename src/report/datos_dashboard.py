@@ -98,6 +98,19 @@ def cargar(con=None) -> dict:
     d["itcr_global"] = float(itcr.iloc[-1]) if len(itcr) else None
     d["itcr_global_fecha"] = itcr.index[-1] if len(itcr) else None
 
+    # ---- datos cargados a mano (ver src/etl/cargar_manual.py). Cualquier
+    # observacion vigente (ultimo vintage) cuya `fuente` empiece con
+    # "MANUAL: " se muestra en dashboard/informe con su fecha, para que el
+    # lector nunca confunda un dato manual con uno del pipeline automatico.
+    d["datos_manuales"] = pd.read_sql(
+        "SELECT v.nombre, o.fecha_ref, o.fecha_descarga, "
+        " substr(o.fuente, 9) AS fuente "
+        "FROM observaciones o "
+        "JOIN v_series_actual va ON va.var_id=o.var_id AND va.fecha_ref=o.fecha_ref AND va.vintage=o.vintage "
+        "JOIN variables v ON v.var_id = o.var_id "
+        "WHERE o.fuente LIKE 'MANUAL: %' "
+        "ORDER BY o.fecha_descarga DESC", con)
+
     # ---- alertas (semaforo)
     al = pd.read_sql("SELECT severidad, COUNT(*) n FROM alertas WHERE resuelta=0 GROUP BY severidad", con)
     d["alertas_criticas"] = int(al.set_index("severidad")["n"].get("critica", 0))

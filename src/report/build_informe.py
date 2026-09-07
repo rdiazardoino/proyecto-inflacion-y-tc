@@ -47,6 +47,8 @@ td:first-child, th:first-child { text-align:left; }
 .glosario .gt { break-inside:avoid; margin-bottom:8pt; }
 .glosario .gt b { font-family: system-ui, sans-serif; font-size:9pt; }
 .glosario .gt p { margin:1pt 0 0; color:#333; }
+.aviso-manual { background:#fdf6e3; border-left:3pt solid #a3402a; padding:8pt 10pt; font-size:9pt; margin:10pt 0; }
+.aviso-manual table { font-size:8.5pt; }
 """
 
 
@@ -82,6 +84,18 @@ def construir(mes: str | None = None) -> Path:
         f"<div class='gt'><b>{termino}</b><p>{definicion}</p></div>"
         for termino, definicion in glos.GLOSARIO)
 
+    aviso_manual_html = ""
+    if len(d["datos_manuales"]):
+        filas_manual = "".join(
+            f"<tr><td>{r['nombre']}</td><td>{_fmes(pd.Timestamp(r['fecha_ref']))}</td>"
+            f"<td>{_fdia(pd.Timestamp(r['fecha_descarga']))}</td><td>{r['fuente']}</td></tr>"
+            for _, r in d["datos_manuales"].iterrows())
+        aviso_manual_html = f"""<div class="aviso-manual"><b>Datos cargados a mano en esta corrida
+        ({len(d['datos_manuales'])}):</b> no vienen del pipeline automático (ver
+        <code>src/etl/cargar_manual.py</code>) y no se actualizan solos.
+        <table><tr><th>Serie</th><th>Dato de</th><th>Cargado el</th><th>Fuente</th></tr>{filas_manual}</table>
+        </div>"""
+
     ETIQUETA_SUPUESTO = {"dbrl_mensual": "Δ USD/BRL mensual", "ddxy_mensual": "Δ DXY mensual"}
 
     def _render_escenario(r) -> str:
@@ -105,6 +119,8 @@ TC al {_fdia(d['tc_spot_fecha'])} · Origen del pronóstico: {_fmes(d['origen_pr
 incertidumbre explícita (ver bandas de los nodos) y no constituyen asesoramiento financiero ni una
 garantía de resultado. Metodología completa y limitaciones en la sección final y en
 <code>docs/</code> del repositorio.</div>
+
+{aviso_manual_html}
 
 <h2>Cómo leer este informe</h2>
 <p class="nota">Los términos técnicos (ensemble, Random Walk, MAE, backtest, banda de confianza, etc.)

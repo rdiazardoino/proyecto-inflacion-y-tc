@@ -286,6 +286,19 @@ def construir(mes: str | None = None) -> Path:
         f"<div class='gterm'><b>{termino}</b><p>{definicion}</p></div>"
         for termino, definicion in glos.GLOSARIO)
 
+    aviso_manual_html = ""
+    if len(d["datos_manuales"]):
+        filas_manual = "".join(
+            f"<tr><td>{r['nombre']}</td><td>{_fmes(pd.Timestamp(r['fecha_ref']))}</td>"
+            f"<td>{_fdia(pd.Timestamp(r['fecha_descarga']))}</td><td>{r['fuente']}</td></tr>"
+            for _, r in d["datos_manuales"].iterrows())
+        aviso_manual_html = f"""<div class="aviso-manual">
+      <b>⚠ Este informe incluye {len(d['datos_manuales'])} dato(s) cargado(s) a mano</b>, no por el
+      pipeline automático (ver <code>src/etl/cargar_manual.py</code>) — el resto de las series se
+      actualiza solo todos los meses, estos no.
+      <table><tr><th>Serie</th><th>Dato de</th><th>Cargado el</th><th>Fuente</th></tr>{filas_manual}</table>
+    </div>"""
+
     html = f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <title>Inflación y TC Uruguay — {mes}</title>
@@ -322,11 +335,18 @@ def construir(mes: str | None = None) -> Path:
   .gterm {{ font-size:12.5px; line-height:1.5; }}
   .gterm b {{ color:{INK}; }}
   .gterm p {{ margin:2px 0 0; color:{INK2}; }}
+  .aviso-manual {{ border:1px solid #e8c67a; background:#fdf6e3; border-radius:10px;
+                   padding:12px 16px; margin-bottom:20px; font-size:12.5px; color:#6b5417; }}
+  .aviso-manual b {{ color:#4a3900; }}
+  .aviso-manual table {{ width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }}
+  .aviso-manual td, .aviso-manual th {{ padding:3px 8px 3px 0; text-align:left; }}
 </style></head>
 <body>
   <h1>Inflación y Tipo de Cambio — Uruguay</h1>
   <div class="subtitulo">Corrida {mes} · IPC al {_fmes(d['fecha_corte_ipc'])} · TC al {_fdia(d['tc_spot_fecha'])} ·
     Origen del pronóstico: {_fmes(d['origen_pronostico'])}</div>
+
+  {aviso_manual_html}
 
   <details class="glosario">
     <summary>¿Cómo leer este dashboard? — glosario de términos</summary>

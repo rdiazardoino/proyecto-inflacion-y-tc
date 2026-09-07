@@ -63,6 +63,25 @@ configurado hacía días y nunca había corrido solo por esta razón exacta.
 - **Metodología y hallazgos de cada sesión:** `docs/eda_sesion2.md`, `backtest_sesion3.md`,
   `backtest_sesion4.md`, `ensemble_escenarios_sesion5.md`, `manifest_fuentes.md`.
 
+## Cargar un dato manual (agregado 7-sep-2026)
+
+Cuando una serie está bloqueada para el ETL automático (ver la tabla de gaps más abajo y
+`manifest_fuentes.md`) pero se consiguió el dato bajándolo a mano del sitio de la fuente, cargarlo así:
+
+```
+python src/etl/cargar_manual.py <var_id> <fecha_ref YYYY-MM-01> <valor> --fuente "de dónde salió"
+python src/etl/cargar_manual.py <var_id> --csv archivo.csv --fuente "..."   # varios puntos (fecha_ref,valor)
+```
+
+Esto lo guarda en `observaciones` como cualquier otro dato (mismo diseño point-in-time), pero con
+`fuente` prefijado `MANUAL: `. **`datos_dashboard.py` busca ese prefijo solo**: cualquier dato cargado
+así aparece automáticamente en un aviso destacado en el dashboard y en el informe, con el nombre de la
+serie, el mes al que corresponde el dato y la fecha en que se cargó — para que nunca se confunda con
+un número del pipeline automático. No hace falta tocar ningún otro archivo.
+
+Si más adelante el ETL automático logra traer esa misma serie, el próximo `upsert_observaciones` con
+`fuente` sin el prefijo "MANUAL: " pasa a ser el vintage más reciente y el aviso desaparece solo.
+
 ## Qué falta para que esto sea más robusto (ver también `manifest_fuentes.md`)
 
 **Resuelto el 4-sep-2026**:
