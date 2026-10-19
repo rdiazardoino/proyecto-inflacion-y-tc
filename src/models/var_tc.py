@@ -2,10 +2,10 @@
 Sesion 4 - VAR(2) reducido TC-inflacion (sustituye al BVAR del plan Seccion 8.3).
 
 El plan pide un BVAR(2) con priors Minnesota sobre [DTC, pi, TPM, DBRL, DDXY].
-No se puede estimar tal cual: `tpm_bcu` tiene un UNICO punto historico (5.75%,
-extraido del IPOM 1T-2026, ver src/etl/bcu_ipom.py) porque el resto de la
-serie de la TPM esta bloqueada (portal SPA del BCU). Sin una serie mensual
-real de la TPM no hay VAR posible con esa variable.
+No se puede estimar tal cual: la serie mensual de `tpm_bcu` existe recien
+desde ene-2022 (src/etl/bcu_ipom.py se reemplazo por bcu_tpm.py el
+19-oct-2026; antes habia un unico punto). Con ~4 anos no alcanza para
+estimar y backtestear un VAR con TPM comparable al resto (origenes desde 2016).
 
 Lo que SI se puede estimar honestamente es un VAR(2) SIN TPM, sobre
 [pi, DTC, DBRL, DDXY], por OLS ecuacion por ecuacion (equivalente a un VAR

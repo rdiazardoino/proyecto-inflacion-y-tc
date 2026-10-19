@@ -2,82 +2,43 @@
 ITCR (Indice de Tipo de Cambio Real Efectivo) del BCU: Global,
 Extrarregional y Regional -- mensual, base 2017=100.
 
-Hallazgo real del 4-sep-2026: el dato llega por tres llamadas HTTP
-encadenadas a un motor BI de terceros ("O3 BI", IdeaSoft):
+El dato vive en un widget de un motor BI de terceros ("O3 BI", IdeaSoft)
+embebido en el eportal Liferay (`/eportal/web/guest/tcre`). Al cargar la
+pagina, el propio widget pide el grid con un POST
+`...?p_p_resource_id=processCommands` que devuelve JSON con fecha +
+TCRE Global/Extrarregional/Regional.
 
-  1. GET la pagina del guest (`/eportal/web/guest/tcre`) -- trae el id de
-     layout (p_l_id) y el id de instancia del portlet O3ViewPortlet.
-  2. POST a `/eportal/c/portal/render_portlet` para ESE portlet -- la
-     respuesta (un fragmento HTML con JS embebido) trae un "Ticket"
-     (token de sesion del motor BI, valido solo para esta sesion HTTP) y
-     la "View" (identificador del reporte, ej. 'urn:o3bi:...:a:2005').
-  3. POST a la misma URL del portlet con `p_p_resource_id=processCommands`
-     y un XML de consulta (`queryCommand`) que usa ese Ticket como
-     "password" y esa View -- devuelve el grid real: fecha + TCRE
-     Global/Extrarregional/Regional.
+Mecanica (corregida 19-oct-2026): se abre la pagina con Chromium y se
+INTERCEPTAN esas respuestas (`pagina.on("response")`), sin pedir nada a
+mano. La version anterior replicaba los pedidos (render_portlet ->
+Ticket/View -> processCommands) y en produccion devolvia HTTP 401 en
+todas las corridas (5-sep-2026), mientras que en esa misma corrida el
+capturador pasivo de descubrir_js.py recibia los dos grids con status
+200 -- el navegador real arma su propia sesion con el widget (tokens
+CSRF de Vaadin incluidos) y eso no se reproduce desde afuera.
 
-INTENTO FALLIDO Y CORREGIDO (4-sep-2026): la primera version de este
-modulo hacia el paso 1 con `requests` puro (sin navegador), asumiendo
-que el markup con el portlet era HTML estatico del servidor -- fallaba
-en produccion con "no se encontro ningun portlet O3ViewPortlet en la
-pagina" porque NO lo es: el portlet se inserta en el DOM por una llamada
-AJAX que el propio Liferay dispara al cargar (visible en las respuestas
-de red capturadas por descubrir_js.py), y un GET plano nunca la ejecuta.
-Por eso el paso 1 SI necesita un navegador real (Playwright) -- los
-pasos 2 y 3 se hacen con el contexto de pedidos del propio navegador
-(`pagina.request`), que ya comparte las cookies de la sesion, en vez de
-armar una sesion de `requests` aparte.
+La pagina tiene DOS graficos (Indice y Variacion interanual), cada uno
+con su propio grid. Se elige el de niveles por magnitud: mediana > 40
+(niveles ~75-120) en vez de variacion porcentual (~-25 a +30).
 
-El ITCR tiene DOS graficos en la pagina (Indice y Variacion interanual),
-cada uno con su propio portlet/Ticket/View -- y trae valores DISTINTOS
-(uno el nivel del indice ~75-120, el otro la variacion interanual en
-%, ~-25 a +30): comprobado con datos reales, NO alcanza con resolver
-cualquiera de los dos porque no hay forma confiable de saber por HTML
-cual es cual (el orden de aparicion de los portlets en el markup no se
-corresponde con el orden visual de los graficos). Se consultan ambos y
-se elige por la magnitud de los valores devueltos (ver series()).
-
-Fragil por diseño: depende de la estructura interna de un widget de
-terceros que puede cambiar sin aviso del BCU. Si algo de esto deja de
-funcionar, el paso levanta una alerta clara en vez de fallar en
-silencio -- no es peor que el estado actual (sin ingestor).
+`series_desde_capturas()` lee las mismas respuestas desde lo que
+descubrir_js.py ya archivo en data/raw/descubrimiento/itcr_bcu_js/red/
+-- respaldo si la pagina no responde en vivo.
 """
 
 from __future__ import annotations
 
 import json
 import re
-import urllib.parse
+import time
+from pathlib import Path
 
 import pandas as pd
 
-BASE = "https://ganges.bcu.gub.uy:8443"
-URL_GUEST = f"{BASE}/eportal/web/guest/tcre"
-URL_RENDER_PORTLET = f"{BASE}/eportal/c/portal/render_portlet"
-
-_PATRON_COL_ID = re.compile(r"(_\d+_INSTANCE_\w+__column-\d+)")
-_PATRON_PORTLET_ID = re.compile(r'id="p_p_id_(O3ViewPortlet_WAR_o3partsweb_INSTANCE_\w+)_"')
-_PATRON_PL_ID = re.compile(r"p_l_id=(\d+)")
-_VENTANA_EMPAREJAR = 400  # caracteres entre "layout-column_<col_id>" y el div del portlet
-_PATRON_TICKET = re.compile(r'Ticket:"(TK-[a-f0-9-]+)"')
-_PATRON_VIEW = re.compile(r"(urn:o3bi:[\w:]+)")
-
-_QUERY_TEMPLATE = (
-    "<queryCommands xmlns='http://ns.ideasoft.biz/o3bi/schema/QueryCommands/2011-01' "
-    "xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>"
-    "<queryCommand request='VIEW_QUERY'>"
-    "<ViewQuery forceGridViews='true' swapAxis='false' returnDates='true' "
-    "xmlns='http://ns.ideasoft.biz/o3bi/schema/ViewQuery/2011-01'>"
-    "<View>{view}</View>"
-    "<LabelsMode><ColumnsLabelMode>KEY</ColumnsLabelMode>"
-    "<DimensionMembersLabelMode>LABEL</DimensionMembersLabelMode></LabelsMode>"
-    "<AdditionalAttributes includeAllAttributes='true'></AdditionalAttributes>"
-    "</ViewQuery>"
-    "<dataFilters><dataFilter type='CALCULATED'><calculatedData>false</calculatedData>"
-    "<notCalculatedData>false</notCalculatedData></dataFilter></dataFilters>"
-    "</queryCommand>"
-    "<queryCommand request='QUERY_RESULT_CONTEXT' />"
-    "</queryCommands>")
+ROOT = Path(__file__).resolve().parents[2]
+URL_GUEST = "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre"
+DIR_CAPTURAS = ROOT / "data" / "raw" / "descubrimiento" / "itcr_bcu_js" / "red"
+_MARCA_GRID = "p_p_resource_id=processCommands"
 
 MESES = {
     "ene": 1, "feb": 2, "mar": 3, "abr": 4, "may": 5, "jun": 6,
@@ -96,96 +57,6 @@ def _fecha_de_caption(caption: str) -> str | None:
     return f"{int(m.group(2)):04d}-{mes:02d}-01"
 
 
-def _pares_portlet_col(html_guest: str) -> list[dict]:
-    """
-    Cada (portlet_id, col_id) real de un grafico O3ViewPortlet -- hay dos
-    en la pagina (Indice y Variacion) y no se puede saber cual es cual
-    solo por el orden de aparicion en el HTML (confirmado con datos
-    reales). Se emparejan por proximidad: el div del portlet aparece a
-    pocos caracteres del id de su columna contenedora.
-    """
-    pl_ids = _PATRON_PL_ID.findall(html_guest)
-    if not pl_ids:
-        raise RuntimeError("no se encontro p_l_id en la pagina del ITCR")
-
-    cols_3 = [(m.start(), m.group(1)) for m in _PATRON_COL_ID.finditer(html_guest)
-             if m.group(1).endswith("__column-3")]
-    pares = []
-    for pos_col, col_id in cols_3:
-        ventana = html_guest[pos_col:pos_col + _VENTANA_EMPAREJAR]
-        m_portlet = _PATRON_PORTLET_ID.search(ventana)
-        if m_portlet:
-            pares.append({"col_id": col_id, "portlet_id": m_portlet.group(1), "p_l_id": pl_ids[0]})
-    if not pares:
-        raise RuntimeError("no se encontro ningun portlet O3ViewPortlet en la pagina del ITCR")
-    return pares
-
-
-_FETCH_POST_JS = """
-async ({url, body}) => {
-    const resp = await fetch(url, {
-        method: "POST",
-        headers: body ? {"Content-Type": "application/x-www-form-urlencoded"} : {},
-        body: body || undefined,
-        credentials: "same-origin",
-    });
-    const texto = await resp.text();
-    return {status: resp.status, texto: texto};
-}
-"""
-
-
-def _fetch_post(pagina, url: str, params: dict, formulario: dict | None) -> str:
-    """
-    POST ejecutado DESDE DENTRO de la pagina (pagina.evaluate + fetch), no
-    desde el contexto de pedidos de Playwright -- asi hereda Referer,
-    Origin y cookies exactamente como el navegador real (que es como se
-    capturaron estas llamadas originalmente). Bug real encontrado en
-    produccion: con pagina.request.post() (fuera de la pagina) el ultimo
-    paso (processCommands) devolvia 401 -- faltaba algo que un fetch()
-    real desde adentro de la pagina manda solo, no reproducido a mano.
-    """
-    url_completa = f"{url}?{urllib.parse.urlencode(params)}"
-    cuerpo = urllib.parse.urlencode(formulario) if formulario else None
-    resultado = pagina.evaluate(_FETCH_POST_JS, {"url": url_completa, "body": cuerpo})
-    if resultado["status"] >= 400:
-        raise RuntimeError(f"{url}: HTTP {resultado['status']}")
-    return resultado["texto"]
-
-
-def _obtener_ticket_y_view(pagina, cfg: dict) -> tuple[str, str]:
-    params = {
-        "p_l_id": cfg["p_l_id"], "p_p_id": cfg["portlet_id"], "p_p_lifecycle": "0",
-        "p_t_lifecycle": "0", "p_p_state": "normal", "p_p_mode": "view",
-        "p_p_col_id": cfg["col_id"], "p_p_col_pos": "0", "p_p_col_count": "1",
-        "p_p_isolated": "1", "currentURL": "/eportal/web/guest/tcre",
-    }
-    texto = _fetch_post(pagina, URL_RENDER_PORTLET, params, None)
-    m_ticket = _PATRON_TICKET.search(texto)
-    m_view = _PATRON_VIEW.search(texto)
-    if not m_ticket or not m_view:
-        raise RuntimeError("no se encontro Ticket/View en la respuesta de render_portlet")
-    return m_ticket.group(1), m_view.group(1)
-
-
-def _consultar_grid(pagina, cfg: dict, ticket: str, view: str) -> dict:
-    params = {
-        "p_p_id": cfg["portlet_id"], "p_p_lifecycle": "2", "p_p_state": "normal",
-        "p_p_mode": "view", "p_p_resource_id": "processCommands",
-        "p_p_cacheability": "cacheLevelPage", "p_p_col_id": cfg["col_id"],
-        "p_p_col_count": "1",
-        f"_{cfg['portlet_id']}_resource-name": "processCommands",
-    }
-    formulario = {
-        "senchapost": "true",
-        "queryCommand": _QUERY_TEMPLATE.format(view=view),
-        "username": "guest", "password": ticket,
-        "x-rest-locale": "en_US", "typeAccept": "application/is-grid+json", "export": "false",
-    }
-    texto = _fetch_post(pagina, URL_GUEST, params, formulario)
-    return json.loads(texto)
-
-
 def _series_del_grid(resultado: dict) -> dict[str, pd.Series]:
     grid = resultado["queryCommandsResult"]["queryCommandResult"][0]["grid"]["grid"]
     columnas = {c["@name"]: c["@label0"] for c in grid["columns"] if c["@member"] == "false"}
@@ -201,53 +72,66 @@ def _series_del_grid(resultado: dict) -> dict[str, pd.Series]:
     return {nombre: pd.Series(vals, index=idx).sort_index() for nombre, vals in valores.items()}
 
 
-def series(timeout_ms: int = 60_000) -> dict[str, pd.Series]:
-    """{'TCRE - Global': serie, 'TCRE - Extrarregional': serie, 'TCRE - Regional': serie}.
+def elegir_niveles(grids: list[dict]) -> dict[str, pd.Series]:
+    """De los grids capturados, el de niveles del indice (no el de variacion)."""
+    for g in grids:
+        try:
+            series_por_nombre = _series_del_grid(g)
+        except (KeyError, IndexError, TypeError, ValueError):
+            continue
+        medianas = [s.abs().median() for s in series_por_nombre.values()]
+        if medianas and min(medianas) > 40:
+            return series_por_nombre
+    raise RuntimeError(f"ningun grid con cara de niveles entre {len(grids)} capturados")
 
-    Los NIVELES del indice (base 2017=100) -- la pagina tiene dos
-    graficos (Indice y Variacion) y no hay forma confiable de saber por
-    HTML cual portlet es cual (ver _pares_portlet_col), asi que se
-    consultan todos y se elige el resultado cuyos valores tienen cara de
-    nivel (mediana > 40) en vez de variacion porcentual (tipicamente
-    entre -30 y +30).
 
-    El paso 1 (encontrar los portlets) necesita un navegador real -- el
-    portlet se inserta en el DOM por una llamada AJAX que Liferay dispara
-    al cargar, un GET plano nunca la ejecuta (ver docstring del modulo).
-    Los pasos 2 y 3 corren DENTRO de esa misma pagina (fetch() via
-    pagina.evaluate) para heredar Referer/Origin/cookies igual que el
-    navegador real -- ver docstring de _fetch_post.
-    """
+def series(timeout_ms: int = 60_000, espera_grids_s: int = 25) -> dict[str, pd.Series]:
+    """{'TCRE - Global': serie, 'TCRE - Extrarregional': serie, 'TCRE - Regional': serie}."""
     from playwright.sync_api import sync_playwright  # import diferido: pesado, solo hace falta aca
+
+    grids: list[dict] = []
+
+    def _on_response(resp):                               # noqa: ANN001
+        if _MARCA_GRID in resp.url and resp.status == 200:
+            try:
+                grids.append(resp.json())
+            except Exception:                             # noqa: BLE001
+                pass
 
     with sync_playwright() as p:
         navegador = p.chromium.launch()
         pagina = navegador.new_page()
+        pagina.on("response", _on_response)
         try:
             pagina.goto(URL_GUEST, timeout=timeout_ms, wait_until="networkidle")
-            pagina.wait_for_timeout(3000)  # margen para el AJAX que inserta los portlets
-            html_guest = pagina.content()
-            pares = _pares_portlet_col(html_guest)
-
-            candidatos: list[dict[str, pd.Series]] = []
-            errores = []
-            for cfg in pares:
-                try:
-                    ticket, view = _obtener_ticket_y_view(pagina, cfg)
-                    resultado = _consultar_grid(pagina, cfg, ticket, view)
-                    candidatos.append(_series_del_grid(resultado))
-                except Exception as e:                            # noqa: BLE001
-                    errores.append(f"{cfg['portlet_id']}: {type(e).__name__}: {e}")
+            limite = time.time() + espera_grids_s
+            while len(grids) < 2 and time.time() < limite:
+                pagina.wait_for_timeout(500)
         finally:
             navegador.close()
+    return elegir_niveles(grids)
 
-    for series_por_nombre in candidatos:
-        medianas = [s.abs().median() for s in series_por_nombre.values()]
-        if medianas and min(medianas) > 40:
-            return series_por_nombre
 
-    detalle = "; ".join(errores) if errores else "ningun candidato parecia niveles (todos < 40)"
-    raise RuntimeError(f"no se pudo identificar el grafico de Indice del ITCR ({detalle})")
+def series_desde_capturas(directorio: Path = DIR_CAPTURAS) -> tuple[dict[str, pd.Series], str]:
+    """(series, 'YYYY-MM-DD' de la captura) desde la captura archivada mas reciente que sirva."""
+    por_fecha: dict[str, list[Path]] = {}
+    for p in directorio.glob("*.json"):
+        if re.match(r"\d{8}_\d{3}_", p.name):
+            por_fecha.setdefault(p.name[:8], []).append(p)
+    for fecha in sorted(por_fecha, reverse=True):
+        grids = []
+        for p in sorted(por_fecha[fecha]):
+            try:
+                contenido = json.loads(p.read_text(encoding="utf-8", errors="replace"))
+            except ValueError:
+                continue
+            if isinstance(contenido, dict) and "queryCommandsResult" in contenido:
+                grids.append(contenido)
+        try:
+            return elegir_niveles(grids), f"{fecha[:4]}-{fecha[4:6]}-{fecha[6:]}"
+        except RuntimeError:
+            continue
+    raise RuntimeError(f"ninguna captura archivada con el grid de niveles en {directorio}")
 
 
 if __name__ == "__main__":

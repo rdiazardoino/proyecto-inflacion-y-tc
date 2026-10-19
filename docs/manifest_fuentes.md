@@ -63,11 +63,12 @@ descubrimiento debe correr en horario hábil de Uruguay.
 | Serie | Estado | Alternativa mientras tanto |
 |---|---|---|
 | Expectativas de inflación 12/24m (mediana, Encuesta BCU) | **resuelto** — ver "Expectativas de inflación" abajo | — |
-| Expectativas de TC / TPM (misma encuesta, sección "Mercado Financiero") | bloqueado: listado de documentos cargado por AJAX, sin valores en HTML estático | descarga manual del documento más reciente listado en esa sección de la página |
-| ITCR global/bilaterales | **diagnosticado, no resuelto** — ver "ITCR" abajo | **descarga manual**: abrir [`/eportal/web/guest/tcre`](https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre), Herramientas (ícono arriba a la izquierda del gráfico) → exportar .xls |
-| TPM (decisiones Copom) | **resuelto parcialmente** — ver más abajo | [IPOM](https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf) (trimestral, sí es PDF estático) |
-| TPM histórica completa (todas las reuniones del Copom) | sin ingestor; primer intento (3-sep-2026) no encontró planilla, solo la página de Comité de Política Monetaria sin datos adjuntos | pendiente |
-| IMAE (brecha de producto) | sin ingestor; localizado el link "IMAE" en `subsitio.bcu.gub.uy/estadisticas/` pero es ruteo SPA (sin URL destino confirmada aún) | pendiente |
+| Expectativas de TPM e inflación de operadores financieros (sección "Mercado Financiero") | bloqueado: listado de documentos cargado por AJAX. Desde el 19-oct-2026 `descubrir_js.py` captura la red de esa página para encontrar el pedido | manual, ver `docs/guia_datos_manuales.md` |
+| Expectativas de TC | **sin fuente oficial confirmada** (corregido 19-oct-2026: la sección "Mercado Financiero" trae TPM e inflación, no TC) | forward implícito por paridad cubierta, cuando estén las tasas de LRM |
+| ITCR global/bilaterales | **resuelto 19-oct-2026** — ver "ITCR" abajo | — |
+| TPM (todas las decisiones del Comité, mensual desde ene-2022) | **resuelto 19-oct-2026** — ver "TPM" abajo | — |
+| IMAE (brecha de producto) | **resuelto 4-sep-2026** (`bcu_imae.py`) | — |
+| Licitaciones (LRM BCU, Notas del Tesoro UGD) | parser sin calibrar. La home de la UGD (archivada semanal) enlaza páginas HTML "Resultado de la licitación…" con la tasa de corte; desde el 19-oct-2026 se archivan para calibrar. La página de LRM del BCU nunca se pudo bajar con requests; se agregó captura con navegador | manual, ver `docs/guia_datos_manuales.md` |
 
 ### Expectativas de inflación — resuelto sin navegador (agregado 3-sep-2026)
 
@@ -91,22 +92,26 @@ ETL mensual se va construyendo una serie real hacia adelante. La sección
 página **no** trae valores en HTML estático — es un listado de documentos,
 mismo patrón AJAX — sigue pendiente.
 
-### ITCR — diagnosticado con Chromium, automatización aún no resuelta
+### ITCR — resuelto (19-oct-2026)
 
-El eportal Liferay (`ganges.bcu.gub.uy:8443/eportal/web/guest/tcre`) SÍ
-renderiza con Chromium headless (`src/etl/descubrir_js.py`, paso
-`descubrimiento_fuentes_js`) — 450KB de HTML real, título "TCRE - Liferay".
-Pero el dato no vive en una tabla HTML: es un gráfico de **Sencha Ext JS**
-dibujado sobre `<canvas>` (identificado por las clases `x-surface-canvas` e
-`ext-element-*`), con exportación a `.xls`/`.jpg` solo vía un ícono en la
-esquina superior izquierda del gráfico → menú "Herramientas" → descargar.
-Automatizar ese click con Playwright es posible en principio, pero sin
-poder ver el render real (el sandbox de análisis no llega a `bcu.gub.uy`)
-programar clicks a ciegas sobre un ícono dibujado en canvas es demasiado
-frágil para hacerlo sin verificación visual — **queda pendiente para una
-iteración con capturas de pantalla reales** (descargar el HTML ya archivado
-en `data/raw/descubrimiento/itcr_bcu_js/` no alcanza: hay que ver el
-render, no el HTML crudo). Mientras tanto, descarga manual.
+El widget O3 BI del eportal pide su grid con un POST `...p_p_resource_id=processCommands`
+al cargar la página. Replicar esos pedidos a mano (versión anterior de `bcu_itcr.py`) daba
+HTTP 401 en producción; en la MISMA corrida del 5-sep-2026 el capturador pasivo de
+`descubrir_js.py` recibió los dos grids con status 200. `bcu_itcr.py` ahora abre la página con
+Chromium e intercepta esas respuestas; elige el grid de niveles (mediana > 40) y descarta el de
+variación interanual. Si la página no responde, `etl_itcr` usa la última captura archivada en
+`itcr_bcu_js/red/`, con el vintage de esa fecha y una alerta. Datos: Global, Extrarregional y
+Regional, base 2017=100, mensual desde ene-2019.
+
+### TPM — resuelto desde los comunicados del Comité (19-oct-2026)
+
+`Comite-de-Politica-Monetaria.aspx` (archivada por `descubrir_fuentes.py` desde el
+3-sep-2026) trae en HTML estático la tabla de comunicados desde ene-2022 con fecha y título;
+37 de 38 títulos dicen la tasa resultante. `bcu_tpm.py` arma la TPM vigente a fin de cada mes.
+Si un título no trae la tasa, la busca en el detalle del comunicado; si no la encuentra, ese
+tramo queda sin dato (may-jun 2022 en la copia archivada). Reemplaza a `bcu_ipom.py`, que
+daba un punto por trimestre con fecha aproximada (asignaba 5,75% a ene-2026, cuando la tasa a
+fin de ese mes era 6,5%) y tenía la URL del IPOM 1T-2026 fija en el código.
 
 ### Descubrimiento con Chromium (Playwright) — agregado 3-sep-2026
 
@@ -138,25 +143,10 @@ workflow tras agregar esto): renderizó las tres páginas sin error de
    excepción (no solo `ValueError`) para que un fallo ahí nunca tire abajo
    el resto del archivado.
 
-### TPM: extracción del IPOM (resuelta con una limitación documentada)
+### Otras fuentes pendientes
 
-El Informe de Política Monetaria (IPOM, trimestral) sí es un PDF estático
-descargable — a diferencia de ITCR y Expectativas, no requiere JavaScript.
-`src/etl/bcu_ipom.py` extrae por regex la frase del Resumen Ejecutivo
-("...resolvió mantener la Tasa de Política Monetaria (TPM) en 5,75%...") y la
-carga como observación de `tpm_bcu`. Verificado contra el IPOM real del
-1T-2026: extrae **5,75%** correctamente.
-
-**Limitación honesta:** el IPOM no siempre da la fecha exacta de la reunión
-del Copom, así que `fecha_ref` es el primer mes del trimestre que cubre el
-informe (deducido del nombre `IPOM_{año}-{trimestre}.pdf`), no la fecha real
-de la decisión. Además solo da el valor *vigente al momento del informe*: la
-serie queda con un punto por trimestre (cuando se archive el próximo IPOM),
-no la serie mensual completa de todas las reuniones del Copom — para eso
-haría falta parsear los comunicados individuales de cada reunión (~8/año),
-que si están en el dominio clásico como PDFs sueltos (`/Acerca-de-BCU/...ACTA
-*COPOM.pdf`, confirmado que existe al menos uno por búsqueda web) — pendiente
-para una iteración futura si se necesita mayor frecuencia.
+| Serie | Estado | Dónde |
+|---|---|---|
 | Combustibles (precios de venta al público) | página encontrada, sin planillas enlazadas | [URSEA — precios de referencia y PMIT](https://www.gub.uy/unidad-reguladora-servicios-energia-agua/comunicacion/publicaciones/precios-venta-publico-referencia-para-gasolinas-gasoil-50-s-pmit-2) | revisar si la tabla está en el cuerpo de la página (HTML) en vez de un archivo adjunto |
 | Tarifas UTE/OSE/Antel | sin explorar | [INE — precios de servicios públicos](https://www.ine.gub.uy/precios-de-servicios-publicos); decretos de Presidencia | tabla `eventos` con Δ% ponderado |
 | Licitaciones LRM/Notas del Tesoro | crudos archivados, parser sin calibrar | BCU Operaciones Monetarias / UGD (`data/raw/licitaciones/`) | calibrar `PATRONES` |

@@ -10,8 +10,11 @@ on:
     # Días hábiles 21:30 UTC ≈ 18:30 Montevideo, después del cierre y de que
     # se publiquen los resultados de licitaciones (antes de las 17:00 local).
     - cron: "30 21 * * 1-5"
-    # Día 5 de cada mes 13:00 UTC ≈ 10:00 Montevideo: el INE ya publicó el IPC.
-    - cron: "0 13 5 * *"
+    # Días 5 a 9 de cada mes 13:00 UTC ≈ 10:00 Montevideo: el INE ya publicó el
+    # IPC. Cinco intentos y no uno: el 5-oct-2026 GitHub dejó el único intento
+    # en cola sin runner y lo canceló, y el mes quedó sin IPC. Las cargas son
+    # idempotentes (upsert point-in-time), repetir no duplica nada.
+    - cron: "0 13 5-9 * *"
   workflow_dispatch:
     inputs:
       modo:
@@ -54,7 +57,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "modo=${{ inputs.modo }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event.schedule }}" = "0 13 5 * *" ]; then
+          elif [ "${{ github.event.schedule }}" = "0 13 5-9 * *" ]; then
             echo "modo=mensual" >> $GITHUB_OUTPUT
           elif [ "$(date -u +%u)" = "5" ]; then
             echo "modo=semanal" >> $GITHUB_OUTPUT

@@ -217,25 +217,29 @@ else:
         check((g > 0).all(), "IMS general sin ceros ni negativos")
 
 # ---------------------------------------------------------------------
-print("\n[8] Extraccion de la TPM del IPOM (PDF real)")
-from src.etl import bcu_ipom  # noqa: E402
-check(bcu_ipom.fecha_ref_de_nombre("IPOM_2026-1.pdf") == "2026-01-01",
-      "fecha_ref de 'IPOM_2026-1.pdf' -> 2026-01-01")
-check(bcu_ipom.fecha_ref_de_nombre("IPOM_2025-4.pdf") == "2025-10-01",
-      "fecha_ref de 'IPOM_2025-4.pdf' -> 2025-10-01")
-check(bcu_ipom.fecha_ref_de_nombre("otra_cosa.pdf") is None,
-      "nombre sin patron IPOM -> None")
+print("\n[8] TPM desde el listado de comunicados del Comite (HTML real del BCU)")
+from src.etl import bcu_tpm  # noqa: E402
+check(bcu_tpm.tasa_en_texto("reduce la tasa de interés en 75 puntos básicos hasta 5,75%") == 5.75,
+      "tasa 'hasta 5,75%' (ignora los puntos basicos)")
+check(bcu_tpm.tasa_en_texto("incrementa la tasa de interés a 9,25% para conducir la inflación "
+                            "a la meta de 4,5%") == 9.25, "toma la tasa, no la meta de 4,5%")
+check(bcu_tpm.tasa_en_texto("anuncia el ingreso a la fase contractiva") is None,
+      "titulo sin tasa -> None (no inventa)")
 
-IPOM_DIR = Path(__file__).resolve().parents[1] / "data" / "raw" / "descubrimiento" / "tpm_bcu"
-if not IPOM_DIR.exists() or not list(IPOM_DIR.glob("*IPOM*.pdf")):
-    print("  (sin IPOM archivado; se salta la extraccion real)")
+_archivo_tpm = sorted(bcu_tpm.DIR_ARCHIVO.glob("*_Comite-de-Politica-Monetaria.aspx"))
+if not _archivo_tpm:
+    print("  (sin pagina del Comite archivada; se salta la extraccion real)")
 else:
-    resultado = bcu_ipom.valor_vigente(IPOM_DIR)
-    check(resultado is not None, "se extrajo un valor de TPM del IPOM real")
-    if resultado:
-        fecha_ref, valor, ruta = resultado
-        check(0 < valor < 30, f"TPM en rango plausible (dio {valor}%)")
-        check(fecha_ref is not None, f"fecha_ref derivada del nombre ({fecha_ref})")
+    import datetime as _dt
+    dec = bcu_tpm.decisiones(_archivo_tpm[-1].read_text(encoding="utf-8", errors="replace"))
+    check(len(dec) >= 30, f"al menos 30 comunicados desde 2022 (dio {len(dec)})")
+    check(dec["tasa"].notna().mean() > 0.9, "mas del 90% de los titulos traen la tasa")
+    check(dec["tasa"].dropna().between(2, 20).all(), "tasas en rango plausible (2%-20%)")
+    s = bcu_tpm.serie_mensual(dec, _dt.date(2026, 9, 5))
+    check(s.get(pd.Timestamp("2026-01-01")) == 6.5, "ene-2026 = 6,5% (recorte del 26-ene)")
+    check(s.get(pd.Timestamp("2026-03-01")) == 5.75, "mar-2026 = 5,75% (recorte del 3-mar)")
+    check(pd.Timestamp("2022-05-01") not in s.index,
+          "may-2022 sin dato (comunicado sin tasa en el titulo), no arrastra la anterior")
 
 # ---------------------------------------------------------------------
 print("\n[9] Extraccion de expectativas de inflacion (HTML real del BCU)")
@@ -277,53 +281,23 @@ else:
         check(s.between(50, 200).all(), f"{var_id}: valores en rango plausible (base ~100)")
 
 # ---------------------------------------------------------------------
-print("\n[11] Extraccion del ITCR (piezas reales del BCU, sin red)")
+print("\n[11] Extraccion del ITCR (respuestas reales del widget, capturadas por descubrir_js)")
 from src.etl import bcu_itcr  # noqa: E402
 
-ITCR_DIR = (Path(__file__).resolve().parents[1] / "data" / "raw" /
-           "descubrimiento" / "itcr_bcu_js")
-# el archivo mas reciente puede ser una pagina de error real del BCU (ej.
-# 503 Service Unavailable, unos cientos de bytes) en vez de un render real
-# (cientos de KB) -- se filtra por tamano para no fallar el test por una
-# falla transitoria del servidor, no del parser.
-_render_itcr = [p for p in ITCR_DIR.glob("*render.html") if p.stat().st_size > 50_000] \
-    if ITCR_DIR.exists() else []
-if not _render_itcr:
-    print("  (sin pagina archivada [o solo paginas de error]; se salta la extraccion real)")
+if not bcu_itcr.DIR_CAPTURAS.exists():
+    print("  (sin capturas de red archivadas; se salta la extraccion real)")
 else:
-    html = _render_itcr[-1].read_text(encoding="utf-8", errors="replace")
-    pares = bcu_itcr._pares_portlet_col(html)
-    check(len(pares) == 2, f"se encontraron 2 pares portlet/columna (dio {len(pares)})")
-
-    _red_dir = ITCR_DIR / "red"
-    _render_portlet = sorted(_red_dir.glob("*render_portlet.json")) if _red_dir.exists() else []
-    _grandes = [p for p in _render_portlet if p.stat().st_size > 100_000]
-    if _grandes:
-        txt = _grandes[0].read_text(encoding="utf-8", errors="replace")
-        m_t = bcu_itcr._PATRON_TICKET.search(txt)
-        m_v = bcu_itcr._PATRON_VIEW.search(txt)
-        check(m_t is not None, "se extrajo un Ticket de un render_portlet real")
-        check(m_v is not None, "se extrajo una View de un render_portlet real")
-    else:
-        print("  (sin render_portlet.json archivado; se salta ticket/view)")
-
-    import json as _json
-    _tcre_grandes = sorted(_red_dir.glob("*tcre.json")) if _red_dir.exists() else []
-    _grid_real = None
-    for p in _tcre_grandes:
-        if 20_000 < p.stat().st_size < 35_000:
-            try:
-                _grid_real = _json.loads(p.read_text(encoding="utf-8", errors="replace"))
-                break
-            except Exception:                                # noqa: BLE001
-                continue
-    if _grid_real is None:
-        print("  (sin grid tcre.json archivado; se salta el parseo del grid)")
-    else:
-        res = bcu_itcr._series_del_grid(_grid_real)
-        check(bool(res), "se parseo al menos una serie del grid real")
-        for nombre, s in res.items():
-            check(len(s) > 50, f"{nombre}: {len(s)} obs (esperable > 50)")
+    res, fecha_captura = bcu_itcr.series_desde_capturas()
+    check(set(res) == {"TCRE - Global", "TCRE - Extrarregional", "TCRE - Regional"},
+          f"las tres series del ITCR (captura del {fecha_captura})")
+    for nombre, s in res.items():
+        check(len(s) > 50, f"{nombre}: {len(s)} obs (esperable > 50)")
+        check(s.between(50, 200).all(), f"{nombre}: niveles (base 2017=100), no variacion %")
+    try:
+        bcu_itcr.elegir_niveles([])
+        check(False, "sin grids debe fallar con error claro")
+    except RuntimeError:
+        check(True, "sin grids falla con error claro (no inventa)")
 
 # ---------------------------------------------------------------------
 print(f"\n{'TODO OK' if not fallos else f'{len(fallos)} FALLAS'}")

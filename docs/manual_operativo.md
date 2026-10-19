@@ -5,8 +5,8 @@
 | Cuándo | Qué corre | Dónde |
 |---|---|---|
 | Días hábiles 18:30 Montevideo | ETL diario (TC, FRED) | GitHub Actions (automático) |
-| Día 5 de cada mes ~10:00 Montevideo | ETL mensual (+ IPC, IMAE, expectativas, ITCR, descubrimiento) | GitHub Actions (automático) |
-| Día 5 de cada mes ~11:30 Montevideo | Análisis completo: backtest, ensemble, escenarios, dashboard, informe | GitHub Actions (automático, workflow `Analisis mensual`) |
+| Días 5 a 9 de cada mes ~10:00 Montevideo | ETL mensual (+ IPC, IMAE, expectativas, ITCR, descubrimiento) | GitHub Actions (automático) |
+| Días 5 a 9 de cada mes ~13:30 Montevideo | Análisis completo: backtest, ensemble, escenarios, dashboard, informe | GitHub Actions (automático, workflow `Analisis mensual`) |
 
 **Automatizado de punta a punta desde el 4-sep-2026** (workflow `analisis.yml`, 90 min de margen
 después del ETL para que este termine y commitee). Antes era manual — ver más abajo cómo disparar
@@ -65,6 +65,8 @@ configurado hacía días y nunca había corrido solo por esta razón exacta.
 
 ## Cargar un dato manual (agregado 7-sep-2026)
 
+Qué datos siguen requiriendo carga manual, dónde están y en qué formato: `docs/guia_datos_manuales.md`.
+
 Cuando una serie está bloqueada para el ETL automático (ver la tabla de gaps más abajo y
 `manifest_fuentes.md`) pero se consiguió el dato bajándolo a mano del sitio de la fuente, cargarlo así:
 
@@ -95,19 +97,13 @@ Si más adelante el ETL automático logra traer esa misma serie, el próximo `up
   "problema de fin de muestra").
 - Automatización del pipeline de análisis mensual completo (ver más arriba).
 
-**Intentado, pausado**: ITCR — el dato SÍ se puede traer sin navegador extra (tres pedidos HTTP
-encadenados a un motor BI de terceros, `src/etl/bcu_itcr.py`), pero el paso 1 (encontrar los
-portlets, insertados por AJAX) necesita Chromium igual. Validado offline contra piezas reales del
-BCU y contra una simulación local completa; en producción tuvo dos fallas distintas ya corregidas
-(401 por usar el contexto de pedidos de Playwright en vez de `fetch()` desde la página) y luego dos
-timeouts de red seguidos navegando a la página — no se pudo confirmar el fix final contra el BCU
-real en esta sesión. El código queda commiteado y se reintenta solo en la próxima corrida mensual;
-si vuelve a fallar, revisar el log de `bcu_itcr` en el workflow `ETL` antes de asumir que el bug
-sigue ahí. Mientras tanto, descarga manual (ver `manifest_fuentes.md`).
+**Resuelto el 19-oct-2026**: ITCR (intercepción de las respuestas del widget, `bcu_itcr.py`) y
+TPM mensual desde 2022 (comunicados del Comité, `bcu_tpm.py`) — ver `manifest_fuentes.md`.
+ETL mensual y análisis ahora corren los días 5 a 9 (antes un solo intento el día 5: el 5-oct-2026
+GitHub lo dejó sin runner y octubre quedó sin IPC).
 
-**Sin resolver**: TPM histórica completa (todas las reuniones del Copom, hoy solo un punto vía
-IPOM) — sin planilla encontrada todavía, dos páginas candidatas revisadas fueron caminos muertos.
-Exógenas por división para el SARIMAX bottom-up genuino — sin abordar, baja prioridad (la sesión 4
+**Sin resolver**: licitaciones (curva en pesos/UI, break-even) y expectativas de operadores
+financieros — ver `docs/guia_datos_manuales.md` para obtenerlas a mano mientras tanto. Exógenas por división para el SARIMAX bottom-up genuino — sin abordar, baja prioridad (la sesión 4
 no encontró ningún challenger que le ganara al benchmark top-down). Expectativas de inflación como
 regresor dinámico en Phillips (hoy usa la meta constante del BCU) — dato ya cargado, falta
 integrarlo al modelo. Ninguno de estos bloquea la operación mensual.

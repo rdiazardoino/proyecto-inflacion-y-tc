@@ -21,11 +21,10 @@ Fuentes y donde viven:
                     config/variables.yaml). URL sin confirmar todavia --
                     candidatas por analogia con el resto de Estadisticas e
                     Indicadores; se calibra contra lo que se archive.
-  tpm_historica_bcu Serie completa de TPM (todas las decisiones del Copom,
-                    no solo la vigente al cierre del ultimo IPOM -- ver
-                    bcu_ipom.py para esa limitacion). Candidatas sin
-                    confirmar; si el BCU publica una planilla historica en
-                    vez de solo comunicados sueltos, esto la encuentra.
+  tpm_historica_bcu Listado de comunicados del Comite de Politica Monetaria
+                    (Comite-de-Politica-Monetaria.aspx): de aca sale la serie
+                    de TPM desde 2022 (bcu_tpm.py usa la copia archivada si
+                    la pagina no responde en vivo).
 
 Cada clave lista URLs candidatas (los sitios .gub.uy reorganizan sin
 redirect). Se archiva el HTML de la primera que responda y hasta
@@ -78,11 +77,8 @@ FUENTES: dict[str, list[str]] = {
         "https://www.bcu.gub.uy/Estadisticas-e-Indicadores/Paginas/Tipo-de-cambio-real-efectivo.aspx",
     ],
     "tpm_bcu": [
-        # el IPOM trimestral SI es un PDF estatico (no SPA) y trae la serie
-        # de TPM en anexo; hallado por busqueda web el 3-sep-2026. Va PRIMERO:
-        # descubrir_fuente() para en el primer candidato que responda, y un
-        # PDF real vale mas que el cascaron SPA de subsitio.
-        "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Reportes%20de%20Poltica%20Monetaria/IPOM_2026-1.pdf",
+        # la TPM ya se ingiere desde el listado de comunicados (bcu_tpm.py);
+        # el PDF del IPOM (8,6 MB por corrida) se dejo de archivar el 19-oct-2026.
         "https://subsitio.bcu.gub.uy/politica-monetaria/",
         # la TPM se anuncia por comunicado del Copom; estas paginas enlazan
         # los comunicados y el IPOM (que trae la serie)
@@ -255,9 +251,21 @@ def descubrir_fuente(clave: str, candidatas: list[str]) -> dict:
     return resumen
 
 
+def ya_archivado_este_mes(subdir: Path) -> bool:
+    """El ETL mensual se reintenta los dias 5-9: no re-archivar lo que ya se bajo este mes."""
+    prefijo = f"{dt.date.today():%Y%m}"
+    return subdir.exists() and any(p.name.startswith(prefijo) for p in subdir.rglob("*"))
+
+
 def descubrir_todo() -> list[dict]:
     RAW.mkdir(parents=True, exist_ok=True)
-    return [descubrir_fuente(clave, urls) for clave, urls in FUENTES.items()]
+    resultados = []
+    for clave, urls in FUENTES.items():
+        if ya_archivado_este_mes(RAW / clave):
+            print(f"[desc] {clave}: ya archivado este mes, se saltea")
+            continue
+        resultados.append(descubrir_fuente(clave, urls))
+    return resultados
 
 
 if __name__ == "__main__":

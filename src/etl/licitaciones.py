@@ -113,6 +113,13 @@ def descubrir() -> None:
             print(f"  {len(enlaces)} enlaces, {len(interes)} de interes:")
             for u in dict.fromkeys(interes[:40]):
                 print("   -", u)
+            # la home de la UGD enlaza paginas HTML "Resultado de la licitacion
+            # de la Serie N ..." con la tasa de corte (visto 19-oct-2026): se
+            # archivan para calibrar el parser contra paginas reales.
+            if clave == "ugd_home":
+                for u in dict.fromkeys(x for x in interes if "resultado-de-la-licitacion" in x.lower()):
+                    r = _guardar(u, "ugd_resultados")
+                    print(f"  resultado archivado: {r.name if r else 'fallo'}")
             tablas = sopa.find_all("table")
             print(f"  {len(tablas)} tablas en la pagina")
             for i, t in enumerate(tablas[:3]):

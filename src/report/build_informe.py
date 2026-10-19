@@ -183,24 +183,22 @@ benchmark de TC evaluado le gana de forma sostenida al random walk (ver <code>do
 y <code>docs/backtest_sesion4.md</code>).</p>
 
 <h2>Política monetaria</h2>
-<p>TPM vigente: <b>{d['tpm']:.2f}%</b>, según el Informe de Política Monetaria del BCU
-({_fmes_abr(d['tpm_fecha'])}) — <span class="pendiente">único punto histórico disponible por ahora: la
-serie mensual completa de todas las decisiones del Copom todavía no está cargada (ver
-<code>docs/manifest_fuentes.md</code>)</span>. Tasa real ex ante:
+<p>TPM vigente: <b>{d['tpm']:.2f}%</b> ({_fmes_abr(d['tpm_fecha'])}, según los comunicados del Comité de
+Política Monetaria del BCU){', sin cambios desde ' + _fmes_abr(d['tpm_desde']) if d['tpm_desde'] is not None else ''}{'. Hace doce meses estaba en ' + f"{d['tpm_hace_12m']:.2f}%" + (f" — un recorte acumulado de {(d['tpm_hace_12m'] - d['tpm']) * 100:.0f} puntos básicos" if d['tpm_hace_12m'] > d['tpm'] else (f" — una suba acumulada de {(d['tpm'] - d['tpm_hace_12m']) * 100:.0f} puntos básicos" if d['tpm_hace_12m'] < d['tpm'] else '')) if d['tpm_hace_12m'] is not None else ''}. Tasa real ex ante:
 <b>{d['tasa_real_ex_ante']:.2f} p.p.</b> = TPM menos {'la expectativa de inflación a 12 meses de la Encuesta del BCU (' + f"{d['expectativa_inflacion_12m']:.1f}%" + ', ' + _fmes_abr(d['expectativa_inflacion_12m_fecha']) + ')' if not d['tasa_real_ex_ante_es_proxy'] else 'la meta puntual del BCU (proxy, la Encuesta de Expectativas no está disponible este mes)'}.
 Una tasa real positiva indica una política monetaria contractiva.</p>
 
 <h2>Contexto regional y global</h2>
 <p>{'Brecha de producto (IMAE, filtro HP): <b>' + f"{d['brecha_producto']:+.2f}" + '</b> (' + _fmes_abr(d['brecha_producto_fecha']) + ') — ' + ('positiva, actividad por encima de su tendencia de largo plazo (presión inflacionaria desde el lado real de la economía).' if d['brecha_producto'] > 0 else 'negativa, la economía opera con capacidad ociosa (presión inflacionaria acotada desde el lado real).') if d['brecha_producto'] is not None else '<span class="pendiente">Brecha de producto todavía no disponible: hace falta más historia de IMAE cargada.</span>'}
-{('ITCR global: <b>' + f"{d['itcr_global']:.1f}" + '</b> (base 2017=100, ' + _fmes_abr(d['itcr_global_fecha']) + ').') if d['itcr_global'] is not None else '<span class="pendiente">ITCR todavía no disponible: el ingestor está en prueba contra el BCU real (ver docs/manifest_fuentes.md).</span>'}
+{('ITCR global: <b>' + f"{d['itcr_global']:.1f}" + '</b> (base 2017=100, ' + _fmes_abr(d['itcr_global_fecha']) + ')' + ((f", {d['itcr_global_var_aa']:+.1f}% en doce meses: el peso " + ('se abarató' if d['itcr_global_var_aa'] > 0 else 'se encareció') + ' en términos reales frente a sus socios comerciales') if d['itcr_global_var_aa'] is not None else '') + '.') if d['itcr_global'] is not None else '<span class="pendiente">ITCR no disponible en esta corrida (el BCU no respondió y no hay captura archivada).</span>'}
 No hay datos fiscales cargados (resultado del sector público). Lo disponible como exógenas de los modelos:
 USD/BRL, DXY, Brent, CPI EEUU y la curva de rendimientos del Tesoro americano (2a/3m/10a).</p>
 
 <h2>Escenarios</h2>
 <p>Tres escenarios definidos como sendas de USD/BRL y DXY (no como ajustes del resultado), corridos sobre
 el mismo modelo (VAR(2) reducido) para que la coherencia interna entre TC e inflación sea automática.
-Probabilidades por juicio documentado (no hay BVAR con TPM histórica ni encuesta de expectativas para
-calibrarlas de otra forma).</p>
+Probabilidades por juicio documentado: la TPM histórica cargada arranca en 2022, una muestra todavía
+corta para estimar y validar un modelo que las calibre.</p>
 {escenarios_html}
 
 <h2>Riesgos</h2>
@@ -208,10 +206,10 @@ calibrarlas de otra forma).</p>
 <li><b>De modelo:</b> ningún modelo económico (SARIMAX top-down, Phillips reducida, VAR(2)) le gana al
 benchmark random-walk/estacional en backtest — el pronóstico oficial depende de modelos simples que no
 capturan mecanismos económicos explícitos. Ver <code>docs/backtest_sesion4.md</code>.</li>
-<li><b>De datos:</b> ITCR e historia completa de la TPM todavía no cargados; las probabilidades de
-escenario siguen siendo juicio del analista, no una salida de un modelo calibrado con esas series
-(ver <code>docs/manifest_fuentes.md</code>). Expectativas de inflación e IMAE (brecha de producto) sí
-se incorporaron este mes.</li>
+<li><b>De datos:</b> sin curva de rendimientos en pesos/UI (licitaciones) ni expectativas de
+operadores financieros, así que no hay break-even de inflación de mercado para contrastar el
+pronóstico; las expectativas de la encuesta a analistas solo existen desde ago-2026 (se acumulan mes a
+mes). Ver <code>docs/guia_datos_manuales.md</code>.</li>
 <li><b>De mercado (escenario adverso, {prob.get('adverso',0)*100:.0f}%):</b> depreciación regional/global
 sostenida — ver señales de confirmación arriba.</li>
 </ul>
@@ -247,7 +245,8 @@ régimen 2022+, piso de 10% por modelo admitido (<code>docs/ensemble_escenarios_
 
 <h2>Fuentes y fecha de corte</h2>
 <p>IPC: INE, base oct-2022=100, corte {_fmes(d['fecha_corte_ipc'])}. TC: BCU (SOAP cotizaciones), corte
-{_fdia(d['tc_spot_fecha'])}. TPM: Informe de Política Monetaria del BCU, {_fmes_abr(d['tpm_fecha'])}.
+{_fdia(d['tc_spot_fecha'])}. TPM: comunicados del Comité de Política Monetaria del BCU, {_fmes_abr(d['tpm_fecha'])}.
+ITCR: BCU (eportal TCRE){', ' + _fmes_abr(d['itcr_global_fecha']) if d['itcr_global_fecha'] is not None else ''}.
 Externas: FRED (BRL, DXY, Brent, CPI EEUU, curva UST). Inventario completo, rezagos medidos y fuentes
 bloqueadas documentadas en <code>docs/manifest_fuentes.md</code>.</p>
 

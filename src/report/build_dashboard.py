@@ -216,11 +216,16 @@ def construir(mes: str | None = None) -> Path:
         f"{d['tc_spot']:.2f}",
         f"UYU por USD, {_fdia(d['tc_spot_fecha'])}. Variación del mes {d['tc_var_mm']:+.2f}% · del año {d['tc_var_aa']:+.2f}%."))
     if d["itcr_global"] is not None:
+        var_itcr = (f" {d['itcr_global_var_aa']:+.1f}% en 12 meses "
+                    f"({'peso más barato en términos reales' if d['itcr_global_var_aa'] > 0 else 'peso más caro en términos reales'})."
+                    if d["itcr_global_var_aa"] is not None else "")
         kpis.append(_kpi_card("ITCR global (competitividad cambiaria)",
-            f"{d['itcr_global']:.1f}", f"Base 2017=100, dato de {_fmes_abr(d['itcr_global_fecha'])}. Por debajo de 100 sugiere el peso \"caro\" en términos reales."))
+            f"{d['itcr_global']:.1f}",
+            f"Base 2017=100, dato de {_fmes_abr(d['itcr_global_fecha'])}.{var_itcr} "
+            f"Por debajo de 100: peso más caro que en 2017 frente a los socios comerciales."))
     else:
         kpis.append(_kpi_card("ITCR global (competitividad cambiaria)",
-            "N/D", "Ingestor en prueba contra el BCU real (ver docs/manifest_fuentes.md) — todavía sin confirmar.", INK2))
+            "N/D", "El BCU no respondió en esta corrida y no hay captura archivada (ver docs/manifest_fuentes.md).", INK2))
     if d["brecha_producto"] is not None:
         color_brecha = WARN if abs(d["brecha_producto"]) > 2 else INK
         kpis.append(_kpi_card("Brecha de producto (IMAE)",

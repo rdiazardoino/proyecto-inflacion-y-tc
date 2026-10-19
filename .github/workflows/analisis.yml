@@ -1,16 +1,17 @@
 name: Analisis mensual
 
-# Corre DESPUES del ETL mensual (ver etl.yml, dia 5 13:00 UTC): backtest,
+# Corre DESPUES del ETL mensual (ver etl.yml, dias 5-9 13:00 UTC): backtest,
 # ensemble, escenarios, dashboard e informe -- el pipeline completo que
 # hasta el 4-sep-2026 se disparaba a mano (ver docs/manual_operativo.md).
-# 90 minutos de margen sobre el horario del ETL para que termine y
-# commitee antes de que este workflow arranque (el checkout toma lo que
-# el ETL ya haya subido).
+# El checkout toma lo que el ETL ya haya subido.
 
 on:
   schedule:
-    # Dia 5 de cada mes 14:30 UTC ~ 11:30 Montevideo.
-    - cron: "30 14 5 * *"
+    # Dias 5 a 9, 16:30 UTC ~ 13:30 Montevideo: 3,5 h despues del ETL mensual
+    # (GitHub llega a demorar horas los cron) y un intento por cada intento del
+    # ETL. Re-correr es inocuo: el origen del pronostico solo avanza cuando
+    # entra un dato nuevo (run_sesion5.calcular_origen).
+    - cron: "30 16 5-9 * *"
   workflow_dispatch:
 
 concurrency:

@@ -25,7 +25,7 @@ import pandas as pd
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.etl import bcu_cotizaciones, bcu_expectativas, bcu_imae, bcu_ipom, bcu_itcr, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
+from src.etl import bcu_cotizaciones, bcu_expectativas, bcu_imae, bcu_itcr, bcu_tpm, fred_series, ine_ipc, ine_ims, licitaciones  # noqa: E402
 from src.etl import db, descubrir_fuentes, descubrir_js, seed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -222,21 +222,18 @@ def etl_ims(con) -> int:
     return total
 
 
-@paso("bcu_tpm_ipom")
+@paso("bcu_tpm")
 def etl_tpm(con) -> int:
     """
-    TPM vigente extraida del ultimo IPOM archivado por el paso de
-    descubrimiento. No es una serie mensual real (ver docstring de
-    bcu_ipom.py): un punto por trimestre, con fecha_ref aproximada.
+    TPM mensual (vigente a fin de cada mes) desde el listado de
+    comunicados del Comite de Politica Monetaria -- ver bcu_tpm.py. Si la
+    pagina no responde, usa la ultima copia archivada con su vintage.
     """
-    resultado = bcu_ipom.valor_vigente()
-    if resultado is None:
-        raise RuntimeError("no se encontro TPM parseable en ningun IPOM archivado")
-    fecha_ref, valor, ruta = resultado
+    s, vintage, fuente = bcu_tpm.obtener()
     r = db.upsert_observaciones(
-        con, "tpm_bcu", [(fecha_ref, valor)],
-        fuente=f"BCU IPOM ({ruta.name}), extraccion de texto del Resumen Ejecutivo")
-    print(f"[etl] tpm_bcu: {valor}% en {fecha_ref} ({r})")
+        con, "tpm_bcu", [(i.strftime("%Y-%m-%d"), v) for i, v in s.items()],
+        vintage=vintage, fuente=fuente)
+    print(f"[etl] tpm_bcu: {len(s)} meses, ultimo {s.iloc[-1]}% ({s.index[-1]:%Y-%m}) ({r})")
     return r["nuevas"]
 
 
@@ -285,13 +282,20 @@ def etl_imae(con) -> int:
 @paso("bcu_itcr")
 def etl_itcr(con) -> int:
     """
-    ITCR Global/Extrarregional/Regional, replicando sin navegador el
-    flujo de tres pedidos que usa el eportal (guest -> render_portlet ->
-    processCommands) contra el motor BI de terceros -- ver docstring de
-    bcu_itcr.py. Fragil por diseño: si el widget cambia de estructura,
-    este paso falla con una alerta clara en vez de corromper datos.
+    ITCR Global/Extrarregional/Regional, interceptando las respuestas que
+    el propio widget del eportal pide al cargar (ver bcu_itcr.py). Si la
+    pagina no responde en vivo, usa la ultima captura archivada por
+    descubrir_js.py, con el vintage de ESA fecha (no el de hoy) y alerta.
     """
-    resultado = bcu_itcr.series()
+    try:
+        resultado = bcu_itcr.series()
+        vintage, fuente = None, "BCU, eportal TCRE (motor O3 BI)"
+    except Exception as e:                                # noqa: BLE001
+        resultado, vintage = bcu_itcr.series_desde_capturas()
+        fuente = f"BCU, eportal TCRE (motor O3 BI), captura archivada del {vintage}"
+        db.alerta(con, "serie_desactualizada", "warning",
+                  f"ITCR en vivo fallo ({type(e).__name__}: {e}); se uso la captura del {vintage}",
+                  var_id="itcr_global")
     fuentes = {"TCRE - Global": "itcr_global", "TCRE - Extrarregional": "itcr_extrarregional",
                "TCRE - Regional": "itcr_regional"}
     total = 0
@@ -299,7 +303,11 @@ def etl_itcr(con) -> int:
         var_id = fuentes.get(nombre)
         if var_id is None:
             continue
-        total += _upsert_serie(con, var_id, s, "BCU, eportal TCRE (motor O3 BI)")
+        r = db.upsert_observaciones(
+            con, var_id, [(i.strftime("%Y-%m-%d"), v) for i, v in s.items()],
+            vintage=vintage, fuente=fuente)
+        print(f"[etl] {var_id}: {r}")
+        total += r["nuevas"]
     return total
 
 

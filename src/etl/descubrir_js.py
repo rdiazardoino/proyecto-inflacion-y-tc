@@ -39,6 +39,8 @@ from urllib.parse import unquote
 
 import pandas as pd
 
+from src.etl.descubrir_fuentes import ya_archivado_este_mes
+
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "raw" / "descubrimiento"
 
@@ -67,6 +69,17 @@ FUENTES_JS: dict[str, dict] = {
     "itcr_bcu_js": {"url": "https://ganges.bcu.gub.uy:8443/eportal/web/guest/tcre",
                     "capturar_red": True},
     "imae_bcu_js": {"url": "https://subsitio.bcu.gub.uy/estadisticas/", "clic_texto": "IMAE"},
+    # Seccion "Mercado Financiero" (expectativas de TPM e inflacion de
+    # operadores primarios y AFAP): el listado de documentos llega por AJAX.
+    # Se captura la red para encontrar ese pedido (19-oct-2026).
+    "expectativas_financiero_bcu_js": {
+        "url": "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Expectativas-de-los-agentes.aspx",
+        "capturar_red": True},
+    # Resultados de LRM: licitaciones.descubrir() nunca logro bajar esta
+    # pagina con requests (no hay ningun archivo de bcu_operaciones).
+    "lrm_bcu_js": {
+        "url": "https://www.bcu.gub.uy/Politica-Economica-y-Mercados/Paginas/Operaciones-Monetarias.aspx",
+        "capturar_red": True},
 }
 
 
@@ -118,7 +131,8 @@ def _archivar_js(clave: str, url: str, timeout_ms: int = 45_000,
             def _on_response(resp):                        # noqa: ANN001
                 try:
                     ct = resp.headers.get("content-type", "")
-                    if "json" not in ct and "text" not in ct and "javascript" not in ct:
+                    # solo datos (JSON/HTML/XML): JS y CSS eran ~7 MB por corrida sin valor
+                    if ("json" not in ct and "text" not in ct) or "css" in ct or "javascript" in ct:
                         return
                     cuerpo = resp.body()
                     if 200 < len(cuerpo) < 3_000_000:
@@ -297,6 +311,9 @@ def descubrir_todo_js() -> list[dict]:
     RAW.mkdir(parents=True, exist_ok=True)
     resultados = []
     for clave, cfg in FUENTES_JS.items():
+        if ya_archivado_este_mes(RAW / clave):
+            print(f"[desc-js] {clave}: ya archivado este mes, se saltea")
+            continue
         try:
             resultados.append(_archivar_js(clave, cfg["url"], clic_texto=cfg.get("clic_texto"),
                                            clic_coordenadas=cfg.get("clic_coordenadas"),

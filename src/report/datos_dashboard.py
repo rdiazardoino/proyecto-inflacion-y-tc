@@ -73,6 +73,11 @@ def cargar(con=None) -> dict:
     tpm = db.serie(con, "tpm_bcu")
     d["tpm"] = float(tpm.iloc[-1]) if len(tpm) else None
     d["tpm_fecha"] = tpm.index[-1] if len(tpm) else None
+    tpm_m = tpm.asfreq("MS")
+    cambios = tpm_m[tpm_m.diff().fillna(0) != 0]
+    d["tpm_desde"] = cambios.index[-1] if len(cambios) else None   # mes del ultimo cambio
+    d["tpm_hace_12m"] = (float(tpm_m.iloc[-13]) if len(tpm_m) > 12 and pd.notna(tpm_m.iloc[-13])
+                         else None)
     exp12 = db.serie(con, "expectativas_inflacion_12m")
     d["expectativa_inflacion_12m"] = float(exp12.iloc[-1]) if len(exp12) else None
     d["expectativa_inflacion_12m_fecha"] = exp12.index[-1] if len(exp12) else None
@@ -92,11 +97,13 @@ def cargar(con=None) -> dict:
         d["brecha_producto"] = None
         d["brecha_producto_fecha"] = None
 
-    # ---- ITCR (en prueba desde el 4-sep-2026, ver docs/manifest_fuentes.md
-    # -- puede venir vacio si el ingestor todavia no confirmo contra el BCU)
-    itcr = db.serie(con, "itcr_global")
-    d["itcr_global"] = float(itcr.iloc[-1]) if len(itcr) else None
-    d["itcr_global_fecha"] = itcr.index[-1] if len(itcr) else None
+    # ---- ITCR (src/etl/bcu_itcr.py). Mas alto = peso mas barato en terminos
+    # reales (mas competitivo); mas bajo = peso mas caro.
+    itcr = db.serie(con, "itcr_global").asfreq("MS")
+    d["itcr_global"] = float(itcr.dropna().iloc[-1]) if itcr.notna().any() else None
+    d["itcr_global_fecha"] = itcr.dropna().index[-1] if itcr.notna().any() else None
+    d["itcr_global_var_aa"] = (float((itcr / itcr.shift(12) - 1).dropna().iloc[-1] * 100)
+                               if itcr.notna().sum() > 12 else None)
 
     # ---- datos cargados a mano (ver src/etl/cargar_manual.py). Cualquier
     # observacion vigente (ultimo vintage) cuya `fuente` empiece con
