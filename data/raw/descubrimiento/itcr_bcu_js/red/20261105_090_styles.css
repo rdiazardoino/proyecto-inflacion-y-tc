@@ -1,0 +1,63 @@
+@import "../o3-vaadin-theme/styles.css";
+
+.o3-search-component {
+
+}
+
+.o3-search-component .v-filterselect,
+.o3-search-component .v-datefield{
+	margin-right: 5px;
+}
+
+.o3-search-component .o3-search-addFilter-button{
+	margin-top: 5px;
+}
+
+.o3-search-component .o3-search-container{
+	overflow: auto;
+}
+
+ 
+.o3-app-select-optiongroup{
+    display: flex;
+}
+
+/* option group horizontal y responsivo */
+.o3-app-select-optiongroup > .v-select-option {
+    margin-right: 5px;
+}
+
+.o3-search-component .o3-search-groups{
+    margin-bottom: 5px;
+}
+
+.o3-search-title {
+    font-weight: bold;
+}
+
+.o3-search-component .o3-search-toolbar-search .v-button{
+    margin-left: 5px;
+}
+
+
+.o3-theme .o3-search-toolbar-search {
+	width: 100%;
+	max-width: 450px;
+    margin-top: 5px;
+    margin-bottom: 5px;    
+
+}
+
+.o3-search-button-layout {
+    margin-top: 5px;
+    margin-bottom: 5px;     
+} 
+
+
+.o3-search-text {
+    width: 100%;
+}
+
+.o3-search-filter-container {
+    min-width: 450px;
+}
